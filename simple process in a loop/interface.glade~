@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.40.0 -->
+<interface>
+  <requires lib="gtk+" version="3.24"/>
+  <object class="GtkWindow" id="App">
+    <property name="can-focus">False</property>
+    <child>
+      <object class="GtkFixed" id="container1">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <child>
+          <object class="GtkLabel" id="processus">
+            <property name="width-request">100</property>
+            <property name="height-request">80</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">Etat du processus</property>
+            <attributes>
+              <attribute name="foreground" value="#f6f6f5f5f4f4"/>
+              <attribute name="background" value="#6262a0a0eaea"/>
+              <attribute name="underline-color" value="#a5a51d1d2d2d"/>
+              <attribute name="strikethrough-color" value="#3333d1d17a7a"/>
+            </attributes>
+          </object>
+          <packing>
+            <property name="x">158</property>
+            <property name="y">95</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
