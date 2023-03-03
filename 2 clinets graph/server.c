@@ -85,7 +85,7 @@ int main (int argc, char *argv[]){
 
    struct sockaddr_in ConnectedServer[50][50];
    struct sockaddr_in ClientStruct[50];
-   int node[50]={0};
+   int snd, rcv;
  
 
   socklen_t lg = sizeof(struct sockaddr_in);
@@ -159,6 +159,11 @@ int main (int argc, char *argv[]){
    FD_ZERO(&master_set);
    max_sd = listen_sd;
    FD_SET(listen_sd, &master_set);
+
+
+
+
+
 
 
    
@@ -252,11 +257,111 @@ int main (int argc, char *argv[]){
             /****************************************************/
             else
             {
-               printf("  Descriptor %d is readable\n", i);
                close_conn = FALSE;
 
                  /******************if receved is connected server struct**********************/
                  /******************************************************************************/
+
+                if(strcmp(&msg, "NewConnection")){
+
+                 
+                int rc = recv(i,&msg1 , sizeof(msg1), 0);
+                  if (rc < 0)
+                  {
+                     if (errno != EWOULDBLOCK)
+                     {
+                        perror("  recv() failed");
+                        close_conn = TRUE;
+                     }
+                     break;
+                  }
+                  if (rc == 0)
+                  {
+                     printf("  Connection closed\n");
+                     close_conn = TRUE;
+                     break;
+                  }
+
+                  
+                  int j=CheckingServerExists(ClientStruct,msg1); //j is the index of the sent server info
+                  char msgC[200]=" ";
+                  if(j>0){
+                     ConnectedServer[i][j]=1;
+                     strcpy(msgC, "from server: Server information added successfully");
+                     send(i,msgC, strlen(msgC)+1, 0);
+                  
+                  }
+                  else{
+                     strcpy(msgC, "sorry dear client, this server is not connected to main server");
+                     send(i,msgC, strlen(msgC)+1, 0);
+                  }
+
+                  
+
+                 }
+
+
+                 else if(strcmp(&msg, "disconnected")){ 
+
+                  int rc = recv(i,&msg1 , sizeof(msg1), 0);
+                  if (rc < 0)
+                  {
+                     if (errno != EWOULDBLOCK)
+                     {
+                        perror("  recv() failed");
+                        close_conn = TRUE;
+                     }
+                     break;
+                  }
+                  if (rc == 0)
+                  {
+                     printf("  Connection closed\n");
+                     close_conn = TRUE;
+                     break;
+                  }
+
+                  int j=CheckingServerExists(ClientStruct,msg1); //j is the index of the sent server info
+                  char msgC[200]=" ";
+                  if(j>0){
+                     ConnectedServer[i][j] = 0;
+                     strcpy(msgC, "from server: server info deleted successfully");
+                     send(i,msgC, strlen(msgC)+1, 0);
+                     
+                  
+                  }
+                  else{
+                     strcpy(msgC, "sorry dear client, this server is not connected to main server");
+                     send(i,msgC, strlen(msgC)+1, 0);
+                  }
+
+
+                 }
+
+                 if(strcmp(&msg, "Etat")){ 
+
+                 int rc = recv(i,&msg3 , sizeof(msg3), 0);
+                  if (rc < 0)
+                  {
+                     if (errno != EWOULDBLOCK)
+                     {
+                        perror("  recv() failed");
+                        close_conn = TRUE;
+                     }
+                     break;
+                  }
+                  if (rc == 0)
+                  {
+                     printf("  Connection closed\n");
+                     close_conn = TRUE;
+                     break;
+                  }
+
+                  etat[i]=msg3;
+
+
+
+
+                 }
 
                  
 
