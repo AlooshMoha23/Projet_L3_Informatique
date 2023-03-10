@@ -17,41 +17,37 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <pthread.h>
+
+
 #include "fonctions.h"
 //https://www.tala-informatique.fr/wiki/index.php?title=C_pthread
 
 
 // to compile: bash compile.script
 
-GtkWidget *window;
-GtkWidget *drawing_area;
+GtkWidget *App;
+GtkWidget *Container;
+
 cairo_t *node;
 
-int n;
 
+GtkBuilder *builder;// pointer unsed in connection with loading the xml file (interface.glade)
+int n;
 
 
 
 int main (int argc, char *argv[]){
 
 	gtk_init(&argc, &argv); //for any gtk paramtres passed int the command ligne 
-  // GTKInit(window, drawing_area);
+   GTK(App, Container,builder);
 
 
-   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-   gtk_window_set_title(GTK_WINDOW(window), "INTERFACE");
-   gtk_window_set_default_size(GTK_WINDOW(window), 800, 900);
-   drawing_area = gtk_drawing_area_new();
-    gtk_container_add(GTK_CONTAINER(window), drawing_area);
+ 
 
-   gtk_widget_show_all(window);
-   node = gdk_cairo_create(gtk_widget_get_window(drawing_area));
 
-   //g_signal_connect(G_OBJECT(drawing_area), "button-press-event", G_CALLBACK(on_drawing_area_button_press), NULL);
 
-   
 
-   
+
 /*******************thread***************************************************/
 /*      thread to handle gtk main loop                                    */
 /*****************************************************************************/
@@ -63,11 +59,11 @@ int main (int argc, char *argv[]){
         exit(1);
     }
      
-    
+
     pthread_join(thrd, NULL);//jointing so it would work in parrel
     
  
-    
+   
 /*******************socket***************************************************/
 
   if (argc != 2){
@@ -144,9 +140,11 @@ int acp= accept(listen_sd, (struct sockaddr*) &ClientInfo,&lg);
                   }
 
 
+int width = gtk_widget_get_allocated_width(Container);
+int height = gtk_widget_get_allocated_height(Container);
 
- draw_node(node, 600, 500);
-  
+draw_node(node, width/2, height/2);
+
 
 printf("connection accepted...\n");
 
@@ -167,11 +165,10 @@ while(1){
 
    }
 
-   printf("message recieved: %d...\n",n);
-  
-  // update_nodeColor(node, int n);
-   
+   printf("message recieved...\n");
 
+
+  
   
 }
 

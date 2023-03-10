@@ -47,7 +47,7 @@ int cnt=connect(ds, (struct sockaddr *)&ServerInfo, lgA) ;
 int m=1;
 while(1){ 
 
-
+sleep(5);
 
 int snd=send(ds, &m, sizeof(int), 0) ;
 
@@ -71,7 +71,7 @@ if ( snd == -1){
   }
 
  printf("Client : j'attend pendant 3s\n");
- sleep(3);
+ 
 }
 
 

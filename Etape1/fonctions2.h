@@ -9,14 +9,13 @@
 
 
 
+
 void *run_gtk_main(void *arg) {//first thread that would execute in pararell
     gtk_main();
-    return NULL;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+    return NULL;
 }
 
-/*gboolean on_drawing_area_button_press(GtkWidget *widget, GdkEventButton *event, gpointer data) {
-    return TRUE;
-}*/
+
 
 
 /*******************t***************************************************/
@@ -31,22 +30,6 @@ void draw_node(cairo_t *cr, int x, int y)
     cairo_arc(cr, x, y, 10, 0, 2 * G_PI);//NODE_SIZE=10
     cairo_fill(cr);
 }
-void update_nodeColor(cairo_t *cr, int n)
-{
- if(n==1){
-    cairo_set_source_rgb(cr, 0.0, 1.0, 0.0);
- }
- else{
-
-    cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
-
- }
-
- cairo_fill(cr);
-
-}
-    
-
 
  /*static gboolean update_node(GtkWidget *widget, cairo_t *cr, gpointer data){
 
