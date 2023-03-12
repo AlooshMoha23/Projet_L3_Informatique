@@ -9,6 +9,10 @@
 
 
 
+
+
+
+
 void *run_gtk_main(void *arg) {//first thread that would execute in pararell
     gtk_main();
     return NULL;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
@@ -23,29 +27,34 @@ void *run_gtk_main(void *arg) {//first thread that would execute in pararell
 /*drawing                                    */
 /*****************************************************************************/
 
-void draw_node(cairo_t *cr, int x, int y)
+void draw_node(cairo_t *cr, int x, int y,GtkWidget *drawing_area, pthread_mutex_t drawing_area_mutex)
 {
 
-    
+    pthread_mutex_lock(&drawing_area_mutex);
     cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
     cairo_arc(cr, x, y, 10, 0, 2 * G_PI);//NODE_SIZE=10
     cairo_fill(cr);
+    gtk_widget_queue_draw(drawing_area);
+    pthread_mutex_unlock(&drawing_area_mutex);
 }
-void update_nodeColor(cairo_t *cr, int n)
-{
- if(n==1){
-    cairo_set_source_rgb(cr, 0.0, 1.0, 0.0);
- }
- else{
 
-    cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
+void update_nodeColor(cairo_t *cr, int x, int y, int n,GtkWidget *drawing_area, pthread_mutex_t drawing_area_mutex) {
 
- }
+    pthread_mutex_lock(&drawing_area_mutex);
 
- cairo_fill(cr);
+    if(n == 1) {
+        cairo_set_source_rgb(cr, 0.0, 1.0, 0.0);
+    } else {
+        cairo_set_source_rgb(cr, 1.0, 0.0, 0.0);
+    }
+    cairo_arc(cr, x, y, 10, 0, 2 * G_PI);
+    cairo_fill(cr);
+   
 
+    gtk_widget_queue_draw(drawing_area);
+    pthread_mutex_unlock(&drawing_area_mutex);
 }
-    
+  
 
 
  /*static gboolean update_node(GtkWidget *widget, cairo_t *cr, gpointer data){
