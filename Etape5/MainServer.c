@@ -488,7 +488,7 @@ pthread_t gui_tid, server_tid;
 /**********************************************************************************************/
 /* read form file                                                                              */
 /**********************************************************************************************/
-FILE *File=fopen("Files/fileName.txt", "r");
+FILE *File=fopen("Files/file.txt", "r");
 
 if(File==NULL){
     perror("openning file error");
@@ -501,7 +501,7 @@ char line[4000];
 typedef struct {
     
 GdkRGBA color;
-char *NameEtat;
+char NameEtat[50];
     
 } Etat;
 
@@ -514,22 +514,26 @@ Etat Etats[NbEtats];
 //you can simply call fgets() to read the next line of the file
 fgets(line, 4000, File);
 
+int choix=atoi(line);
+
+printf("choice is : %d\n", choix);
+
 //choice, moi or vous
 
 //if the clien choose letting us handle the colors, he should provid strings of all names of status
 //example, he will provid "wait" and we will give a color for wait
-if(strcmp(line,"vous")){
+if(choix==0){
 
     for(int i=0; i<NbEtats; i++){
         fgets(line, 4000, File);
 
-        Etats[i].NameEtat=line;
+        //Etats[i].NameEtat=line;
 
         //on appelle une fonction qui va mettre les valeurs red, grean, blue, alpha
-        Etats[i].color.red=
-        Etats[i].color.green=
-        Etats[i].color.blue=
-        Etats[i].color.alpha=1;
+       // Etats[i].color.red=
+       // Etats[i].color.green=
+       // Etats[i].color.blue=
+        //Etats[i].color.alpha=1;
         
 
         
@@ -539,23 +543,35 @@ if(strcmp(line,"vous")){
 
 }
 
-if(strcmp(line,"moi")){
-    fgets(line, 4000, File);
+if(choix==1){
 
-    //1er mot dans line est le nom de l'etat
-    //2em est le red (plutot le code de la couleur)
-    //3em est le grean (plutot le code de la couleur)
-    //4em est le blue (plutot le code de la couleur)
-    //on met le nom de l'etat dans  Etats[i].NameEtat
-    //red dans Etats[i].color.red
-    //ect..
+    for(int i=0; i<NbEtats; i++){
 
-    //Example wait 0.1 1.0 0.5
-    
+        char red[50];
+        char green[50];
+        char blue[50];
+        //Example wait 0.1 1.0 0.5
+        fgets(line, 4000, File);
+        sscanf(line, "%s %s %s %s", Etats[i].NameEtat,red, green, blue);
+        Etats[i].color.red=atof(red);
+        Etats[i].color.green=atof(green);
+        Etats[i].color.blue=atof(blue);
+        Etats[i].color.alpha=1;
+  
+    }   
 
 }
 
 
+
+
+
+ for(int i=0; i<NbEtats; i++){
+    
+        
+        printf("%s %f %f %f\n", Etats[i].NameEtat, Etats[i].color.red, Etats[i].color.green, Etats[i].color.blue);
+  
+    }   
 
 
 
