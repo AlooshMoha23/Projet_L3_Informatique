@@ -371,7 +371,7 @@ void* server_thread(void* arg) {
                         case 3:
                         new_circle.x = 300;
                         new_circle.y = 275;
-                       
+                        
                         break; 
                         case 4: 
                         new_circle.x = 150;
@@ -523,19 +523,29 @@ printf("choice is : %d\n", choix);
 //if the clien choose letting us handle the colors, he should provid strings of all names of status
 //example, he will provid "wait" and we will give a color for wait
 if(choix==0){
+   
 
+    srand(time(NULL)); // seed the random number generator
     for(int i=0; i<NbEtats; i++){
         fgets(line, 4000, File);
 
-        //Etats[i].NameEtat=line;
+        sscanf(line, "%s", Etats[i].NameEtat);
 
-        //on appelle une fonction qui va mettre les valeurs red, grean, blue, alpha
-       // Etats[i].color.red=
-       // Etats[i].color.green=
-       // Etats[i].color.blue=
-        //Etats[i].color.alpha=1;
-        
+         
 
+          double r = (double)rand() / RAND_MAX;
+
+    
+
+
+        double red = (double)i / NbEtats;
+        double green = ((double)r + 0.001) / NbEtats;
+        double blue = 1.0 - ((double)i+1.0 / NbEtats);
+
+        Etats[i].color.red = red > 1.0 ? 1.0/(double)i : red;
+        Etats[i].color.green = green > 1.0 ? 1.0/(double)i+0.01 : green;
+        Etats[i].color.blue = blue < 0.0 ? 1.0/(double)i+0.02: blue;
+        Etats[i].color.alpha = 1;
         
     }
 
