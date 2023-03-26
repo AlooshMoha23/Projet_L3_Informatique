@@ -9,9 +9,10 @@
 #include <math.h>
 #include <sys/select.h>
 #include<string.h>
+#include <fcntl.h>
 #define min(x,y) x<y?x:y;
 
-#define MAX_CLIENTS 6
+
 
 typedef struct {
     double x;
@@ -19,31 +20,40 @@ typedef struct {
     double radius;
     GdkRGBA color;
     const char* text;
-    int socket_fd;
-    
-    
-    
+    int socket_fd; 
+    int * con_to;
 } Circle;
 typedef struct {
     double x;
     double y;
-    
-    
     const char* text;
-    
-    
-    
-    
 } Text;
+typedef struct {
+    int numEtat;
+    GdkRGBA color;
+    const char* descEtat;
+  
+} Etat;
 
-struct sockaddr_in add_c[MAX_CLIENTS];
- char display_adrr[5][40];
- char indices[5][30];
+struct sockaddr_in *add_c=NULL;
+ char display_adrr[50][40];
+ char indices[50][30];
 
-Circle circles[MAX_CLIENTS];
+Circle *circles = NULL;
+
 int num_clients = 0;
+int nbr_etats;
+int count_etat=0;
+
+Etat * etats=NULL;
+
 GtkWidget* drawing_area;  
-int h=0;
+double center_x = 300;
+double center_y = 200;
+double radius = 100;
+double angle_step;
+int MAX_CLIENTS=0;
+
 
 static void on_check_button_toggled(GtkToggleButton *toggle_button, gpointer user_data)
 {
@@ -171,26 +181,24 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
 
     // Draw a line between each two circles
     for (int i = 0; i < num_clients-1; i++) {
+        for (int j = 0; j < num_clients; j++)
+        {
+            if(circles[i].con_to[j]==1){
+                Circle* circle1 = &circles[i];
+                Circle* circle2 = &circles[j];
+                cairo_set_line_width(cr, 2);
+                cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.8);
+                cairo_move_to(cr, circle1->x, circle1->y);
+                cairo_line_to(cr, circle2->x, circle2->y);
+                cairo_stroke(cr);
+
+            }
+        }
+        
   
-        Circle* circle1 = &circles[i];
-        Circle* circle2 = &circles[i+1];
-        cairo_set_line_width(cr, 2);
-        cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.8);
-        cairo_move_to(cr, circle1->x, circle1->y);
-        cairo_line_to(cr, circle2->x, circle2->y);
-        cairo_stroke(cr);
         
     }
-    if(h==1){
-        Circle* circle1 = &circles[0];
-        Circle* circle2 = &circles[5];
-        cairo_set_line_width(cr, 2);
-         cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.8);
-        cairo_move_to(cr, circle2->x, circle2->y);
-        cairo_line_to(cr, circle1->x, circle1->y);
-        cairo_stroke(cr);
-    }    
-
+  
 
     // Iterate over all circles and draw each one
     for (int i = 0; i < num_clients; i++) {
@@ -264,7 +272,8 @@ void* server_thread(void* arg) {
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
-
+    int flags = fcntl(server_fd, F_GETFL, 0);
+    fcntl(server_fd, F_SETFL, flags | O_NONBLOCK);
     // Bind the socket to a specific port
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
@@ -345,59 +354,14 @@ void* server_thread(void* arg) {
                     new_circle.text=indices[num_clients];
                     char strr[30];
                     sprintf(strr,"%s(%d)",inet_ntoa(address.sin_addr),ntohs(address.sin_port));
-                    strcpy(display_adrr[num_clients],strr);
-                   
-                
-                    switch(num_clients){
-                        case 0: 
-                        new_circle.x = 150;
-                        new_circle.y = 75;
-                        
-
-                        
-                        break;
-                        case 1:
-                        new_circle.x = 300;
-                        new_circle.y = 75;
-                        
-
-                        break;
-                        case 2:
-                         new_circle.x = 400;
-                        new_circle.y = 175;
-                        
-                        break;
-
-                        case 3:
-                        new_circle.x = 300;
-                        new_circle.y = 275;
-                        
-                        break; 
-                        case 4: 
-                        new_circle.x = 150;
-                        new_circle.y = 275;
-                        
-
-                        break;
-                        case 5: 
-                        new_circle.x = 50;
-                        new_circle.y = 175;
-                       
-                       
-                        h=1;
-
-                        break;
-
-
-
-                    }
-
-
+                    strcpy(display_adrr[num_clients],strr);  
+                    new_circle.x = center_x + radius * cos(num_clients * angle_step);
+                    new_circle.y = center_y + radius * sin(num_clients * angle_step);
                     circles[num_clients++] = new_circle;
                     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
                   }
                 printf("New connection, socket fd is %d, num_clients is %d\n", new_socket, num_clients-1);
-                
+               
             }
             
 
@@ -407,7 +371,21 @@ void* server_thread(void* arg) {
             sd = circles[i].socket_fd;
             if (FD_ISSET(sd, &use)) {
                 
-                          
+                       
+
+                          struct sockaddr_in server_address;
+                          if(recv(sd, &server_address, sizeof(server_address), 0)>0){
+                            for(int j=0;j<MAX_CLIENTS;j++){
+                               if (memcmp(&add_c[j],&server_address, sizeof(server_address)) == 0) {
+                                        circles[i].con_to[j]=1;
+                                }
+
+                            }
+                          }
+                          else{
+                            continue;
+                          }
+
                           int f;
                           
                             int rc = recv(sd, &f, sizeof(int), 0);
@@ -425,35 +403,22 @@ void* server_thread(void* arg) {
 
                                             
                                             
+                                        for(int i=0;i<count_etat;i++){
                                         
-                                        
-                                        if(f==1){
+                                        if(f==etats[i].numEtat){
 
                                             printf(" Socket %d:%d\n",sd,f);
-                                            circles[i].color.green = 0.50196;
-                                            circles[i].color.red = 0.0;
-                                            circles[i].color.blue = 0.50196;
-                                           
+                                            circles[i].color=etats[i].color;
                                             
                                             gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
                             
                                         }
                                         
-                                        else{
-                                             
-                                            printf(" Socket %d:%d\n",sd,f);
-                                            circles[i].color.green = 0.6;
-                                            circles[i].color.red = 0.90196;
-                                            circles[i].color.blue = 0.0;
-                                            
-                                            
-                                            
-                                            gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
-
+                                    
                                         }
                                             
                                     }
-                  
+                   
 
                         
                     }
@@ -485,67 +450,71 @@ void* server_thread(void* arg) {
 int main() {
 pthread_t gui_tid, server_tid;
 
-/**********************************************************************************************/
-/* read form file                                                                              */
-/**********************************************************************************************/
-FILE *File=fopen("Files/file.txt", "r");
+ FILE* fp;
+    char line[4000];
+    int nbr_etats;
 
-if(File==NULL){
-    perror("openning file error");
-    exit(1);
-}
+    fp = fopen("etat.txt", "r");
+    if (fp == NULL) {
+        printf("Error opening file!\n");
+        return 1;
+    }
+    //get nombre d'etats
+    if (fgets(line, sizeof(line), fp)) {
+        sscanf(line, "%d", &nbr_etats);
+        printf("First number: %d\n", nbr_etats);
+    }
+    //initialize a table 
+    etats = (Etat *) malloc(nbr_etats * sizeof(Etat));
+    int n =0;
+    //get nbr clients
+     if (fgets(line, sizeof(line), fp)) {
+        sscanf(line, "%d", &n);
+        printf("nombre client: %d\n", n);
+    }
+    //intialize circles and adresses tables
+    circles = (Circle *) malloc(n * sizeof(Circle));
+    add_c = ( struct sockaddr_in *) malloc(n * sizeof(struct sockaddr_in));
+    MAX_CLIENTS=n;
+    angle_step=2*M_PI /n;
+    int choix;
+ if (fgets(line, sizeof(line), fp)) {
+        choix=atoi(line);
 
-char line[4000];
+       printf("choice is : %d\n", choix);
+    }
 
-
-typedef struct {
-    
-GdkRGBA color;
-char NameEtat[50];
-    
-} Etat;
-
-fgets(line, 4000, File);
-
-int NbEtats=atoi(line);
-//check if it's really an int
-Etat Etats[NbEtats];
-//Since you have already read the first line and the file pointer is currently pointing to the second line, 
-//you can simply call fgets() to read the next line of the file
-fgets(line, 4000, File);
-
-int choix=atoi(line);
-
-printf("choice is : %d\n", choix);
 
 //choice, moi or vous
 
 //if the clien choose letting us handle the colors, he should provid strings of all names of status
 //example, he will provid "wait" and we will give a color for wait
+int numE;
 if(choix==0){
    
 
     srand(time(NULL)); // seed the random number generator
-    for(int i=0; i<NbEtats; i++){
-        fgets(line, 4000, File);
+    for(int i=0; i<nbr_etats; i++){
+        fgets(line, 4000, fp);
 
-        sscanf(line, "%s", Etats[i].NameEtat);
+        sscanf(line, "%d", &numE);
 
          
-
+          Etat newEtat;
           double r = (double)rand() / RAND_MAX;
 
     
 
 
-        double red = (double)i / NbEtats;
-        double green = ((double)r + 0.001) / NbEtats;
-        double blue = 1.0 - ((double)i+1.0 / NbEtats);
-
-        Etats[i].color.red = red > 1.0 ? 1.0/(double)i : red;
-        Etats[i].color.green = green > 1.0 ? 1.0/(double)i+0.01 : green;
-        Etats[i].color.blue = blue < 0.0 ? 1.0/(double)i+0.02: blue;
-        Etats[i].color.alpha = 1;
+        double red = (double)i / nbr_etats;
+        double green = ((double)r + 0.001) / nbr_etats;
+        double blue = 1.0 - ((double)i+1.0 / nbr_etats);
+        newEtat.numEtat=numE;
+        newEtat.color.red = red > 1.0 ? 1.0/(double)i : red;
+        newEtat.color.green = green > 1.0 ? 1.0/(double)i+0.01 : green;
+        newEtat.color.blue = blue < 0.0 ? 1.0/(double)i+0.02: blue;
+        newEtat.color.alpha = 1;
+        etats[count_etat++]=newEtat;
         
     }
 
@@ -555,18 +524,21 @@ if(choix==0){
 
 if(choix==1){
 
-    for(int i=0; i<NbEtats; i++){
+    for(int i=0; i<nbr_etats; i++){
+        Etat newEtat;
 
         char red[50];
         char green[50];
         char blue[50];
         //Example wait 0.1 1.0 0.5
-        fgets(line, 4000, File);
-        sscanf(line, "%s %s %s %s", Etats[i].NameEtat,red, green, blue);
-        Etats[i].color.red=atof(red);
-        Etats[i].color.green=atof(green);
-        Etats[i].color.blue=atof(blue);
-        Etats[i].color.alpha=1;
+        fgets(line, 4000, fp);
+        sscanf(line, "%d %s %s %s", &numE,red, green, blue);
+        newEtat.numEtat=numE;
+        newEtat.color.red=atof(red);
+        newEtat.color.green=atof(green);
+        newEtat.color.blue=atof(blue);
+        newEtat.color.alpha=1;
+        etats[count_etat++]=newEtat;
   
     }   
 
@@ -576,10 +548,10 @@ if(choix==1){
 
 
 
- for(int i=0; i<NbEtats; i++){
+ for(int i=0; i<nbr_etats; i++){
     
         
-        printf("%s %f %f %f\n", Etats[i].NameEtat, Etats[i].color.red, Etats[i].color.green, Etats[i].color.blue);
+        printf("%d %f %f %f\n", etats[i].numEtat, etats[i].color.red, etats[i].color.green, etats[i].color.blue);
   
     }   
 
@@ -601,12 +573,31 @@ if(choix==1){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+    
+   
+
+  
+    
+
+    fclose(fp);
+
 // Create GUI thread
 if (pthread_create(&gui_tid, NULL, gui_thread, NULL)) {
     fprintf(stderr, "Error creating GUI thread\n");
     return 1;
 }
-
 
 // Create server thread
 if (pthread_create(&server_tid, NULL, server_thread, NULL)) {
@@ -617,7 +608,6 @@ if (pthread_create(&server_tid, NULL, server_thread, NULL)) {
 // Wait for threads to finish
 pthread_join(gui_tid, NULL);
 pthread_join(server_tid, NULL);
-
 
 
 
