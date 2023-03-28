@@ -42,7 +42,7 @@ struct sockaddr_in *add_c=NULL;
 Circle *circles = NULL;
 
 int num_clients = 0;
-int nbr_etats;
+
 int count_etat=0;
 
 Etat * etats=NULL;
@@ -53,6 +53,7 @@ double center_y = 200;
 double radius = 100;
 double angle_step;
 int MAX_CLIENTS=0;
+
 
 
 static void on_check_button_toggled(GtkToggleButton *toggle_button, gpointer user_data)
@@ -331,7 +332,8 @@ void* server_thread(void* arg) {
             }
 
             
-
+            
+          
             if (num_clients < MAX_CLIENTS) {
                 
                 
@@ -341,9 +343,6 @@ void* server_thread(void* arg) {
                   
                     
                     new_circle.radius = 30;
-                    new_circle.color.red = 0.0;
-                    new_circle.color.green = 0.0;
-                    new_circle.color.blue = 1.0;
                     new_circle.color.alpha = 1;
                     new_circle.socket_fd=new_socket;
                     add_c[num_clients]=address;
@@ -361,7 +360,7 @@ void* server_thread(void* arg) {
                     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
                   }
                 printf("New connection, socket fd is %d, num_clients is %d\n", new_socket, num_clients-1);
-               
+              
             }
             
 
@@ -371,9 +370,9 @@ void* server_thread(void* arg) {
             sd = circles[i].socket_fd;
             if (FD_ISSET(sd, &use)) {
                 
-                       
+                      
 
-                          struct sockaddr_in server_address;
+                          /*Struct sockaddr_in server_address;
                           if(recv(sd, &server_address, sizeof(server_address), 0)>0){
                             for(int j=0;j<MAX_CLIENTS;j++){
                                if (memcmp(&add_c[j],&server_address, sizeof(server_address)) == 0) {
@@ -384,7 +383,7 @@ void* server_thread(void* arg) {
                           }
                           else{
                             continue;
-                          }
+                          }*/
 
                           int f;
                           
@@ -400,15 +399,15 @@ void* server_thread(void* arg) {
                                             
                                         }
                                            
-
+                                         printf(" Avant boucle %d:%d\n",sd,f);
                                             
                                             
-                                        for(int i=0;i<count_etat;i++){
+                                        for(int j=0;j<count_etat;j++){
                                         
-                                        if(f==etats[i].numEtat){
+                                        if(f==etats[j].numEtat){
 
                                             printf(" Socket %d:%d\n",sd,f);
-                                            circles[i].color=etats[i].color;
+                                            circles[i].color=etats[j].color;
                                             
                                             gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
                             
@@ -419,7 +418,6 @@ void* server_thread(void* arg) {
                                             
                                     }
                    
-
                         
                     }
                 }
@@ -448,6 +446,7 @@ void* server_thread(void* arg) {
 
 
 int main() {
+
 pthread_t gui_tid, server_tid;
 
  FILE* fp;
@@ -462,8 +461,9 @@ pthread_t gui_tid, server_tid;
     //get nombre d'etats
     if (fgets(line, sizeof(line), fp)) {
         sscanf(line, "%d", &nbr_etats);
-        printf("First number: %d\n", nbr_etats);
+        printf("Nombre etat: %d\n", nbr_etats);
     }
+    
     //initialize a table 
     etats = (Etat *) malloc(nbr_etats * sizeof(Etat));
     int n =0;
@@ -494,13 +494,11 @@ if(choix==0){
    
 
     srand(time(NULL)); // seed the random number generator
-    for(int i=0; i<nbr_etats; i++){
-        fgets(line, 4000, fp);
-
-        sscanf(line, "%d", &numE);
-
-         
-          Etat newEtat;
+int i=0;
+    while (fgets(line, sizeof(line), fp)) {
+       sscanf(line, "%d", &numE);
+       printf("Number: %d\n", numE);
+      Etat newEtat;
           double r = (double)rand() / RAND_MAX;
 
     
@@ -515,16 +513,22 @@ if(choix==0){
         newEtat.color.blue = blue < 0.0 ? 1.0/(double)i+0.02: blue;
         newEtat.color.alpha = 1;
         etats[count_etat++]=newEtat;
-        
-    }
+        i++;
 
+
+
+    }
+    
 
 
 }
 
 if(choix==1){
-
-    for(int i=0; i<nbr_etats; i++){
+    
+     while (fgets(line, sizeof(line), fp)) {
+       sscanf(line, "%d", &numE);
+       printf("Number: %d\n", numE);
+     
         Etat newEtat;
 
         char red[50];
@@ -555,7 +559,7 @@ if(choix==1){
   
     }   
 
-
+count_etat=nbr_etats;
 
 
 
@@ -611,5 +615,8 @@ pthread_join(server_tid, NULL);
 
 
 
+
+
 return 0;
 }
+
