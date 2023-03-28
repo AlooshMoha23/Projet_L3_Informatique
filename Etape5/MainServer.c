@@ -224,7 +224,7 @@ void* gui_thread(void* arg) {
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Nodes");
     gtk_window_set_default_size(GTK_WINDOW(window), 700, 600);
-    GdkRGBA color = { 0.0, 0.0, 0.2, 1.0 };  // blue color (RGBA values)
+    GdkRGBA color = { 0.0, 0.0, 0.2, 1.0 };  // blue color (RGBA fs)
     gtk_widget_override_background_color(window, GTK_STATE_FLAG_NORMAL, &color);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     
@@ -369,39 +369,33 @@ void* server_thread(void* arg) {
          for (int i = 0; i < max_sd+1; i++) {
             sd = circles[i].socket_fd;
             if (FD_ISSET(sd, &use)) {
-                
-                      
+                 char buffer[1024] = {0};
+                              while (1) {
+                                
+                               int n = recv(sd, buffer, sizeof(buffer), MSG_DONTWAIT);
+                                if (n == -1) {
+                                    // no data available
+                                    usleep(1000); // sleep for 1 ms to avoid busy-waiting
+                                } else if (n == 0) {
+                                    // connection closed by client
+                                    printf("Connection closed by client\n");
+                                    break;
+                                } else {
+                                    if (n == sizeof(struct sockaddr_in)) {
+                                        struct sockaddr_in server_address;
+                                        memcpy(&server_address, buffer, sizeof(struct sockaddr_in ));
+                                        printf("Received adresse %d\n",ntohs(server_address.sin_port) );
+                                          for(int j=0;j<MAX_CLIENTS;j++){
+                                          if (memcmp(&add_c[j],&server_address, sizeof(server_address)) == 0) {
+                                          circles[i].con_to[j]=1;
+                                      }
 
-                          /*Struct sockaddr_in server_address;
-                          if(recv(sd, &server_address, sizeof(server_address), 0)>0){
-                            for(int j=0;j<MAX_CLIENTS;j++){
-                               if (memcmp(&add_c[j],&server_address, sizeof(server_address)) == 0) {
-                                        circles[i].con_to[j]=1;
-                                }
+                                    }
 
-                            }
-                          }
-                          else{
-                            continue;
-                          }*/
-
-                          int f;
-                          
-                            int rc = recv(sd, &f, sizeof(int), 0);
-                                        if (rc < 0){
-                                                perror("  recv() failed");
-                                            
-                                        }
-                                        if (rc == 0)
-                                        {
-                                            printf("  Connection closed\n");
-                                            continue;
-                                            
-                                        }
-                                           
-                                         printf(" Avant boucle %d:%d\n",sd,f);
-                                            
-                                            
+                                    } else if (n == sizeof(int)) {
+                                        int f;
+                                        memcpy(&f, buffer, sizeof(f));
+                                        printf("Received integer: %d\n", f);
                                         for(int j=0;j<count_etat;j++){
                                         
                                         if(f==etats[j].numEtat){
@@ -415,6 +409,17 @@ void* server_thread(void* arg) {
                                         
                                     
                                         }
+                                    } else {
+                                        printf("Received invalid data\n");
+                                    }
+                                }
+                            }
+                
+    
+                
+                                        
+                                           
+                                         
                                             
                                     }
                    
@@ -432,18 +437,6 @@ void* server_thread(void* arg) {
    }
    return NULL;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 int main() {
 
@@ -548,10 +541,6 @@ if(choix==1){
 
 }
 
-
-
-
-
  for(int i=0; i<nbr_etats; i++){
     
         
@@ -560,43 +549,7 @@ if(choix==1){
     }   
 
 count_etat=nbr_etats;
-
-
-
-
-
-
-
-
-
-
-
-/**********************************************************************************************/
-/* end read                                                                                    */
-/**********************************************************************************************/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-   
-
-  
-    
-
     fclose(fp);
-
 // Create GUI thread
 if (pthread_create(&gui_tid, NULL, gui_thread, NULL)) {
     fprintf(stderr, "Error creating GUI thread\n");
@@ -608,15 +561,9 @@ if (pthread_create(&server_tid, NULL, server_thread, NULL)) {
     fprintf(stderr, "Error creating server thread\n");
     return 1;
 }
-
 // Wait for threads to finish
 pthread_join(gui_tid, NULL);
 pthread_join(server_tid, NULL);
 
-
-
-
-
 return 0;
 }
-
