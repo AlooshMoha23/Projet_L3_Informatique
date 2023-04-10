@@ -14,6 +14,7 @@
 
 
 
+
 typedef struct {
     double x;
     double y;
@@ -22,6 +23,9 @@ typedef struct {
     const char* text;
     int socket_fd; 
     int * con_to;
+    struct sockaddr_in addrs;
+    const char* nom_etat;
+    
 } Circle;
 typedef struct {
     double x;
@@ -35,9 +39,9 @@ typedef struct {
   
 } Etat;
 
-struct sockaddr_in *add_c=NULL;
- char display_adrr[50][40];
- char indices[50][30];
+struct sockaddr_in *add_c;
+ char ** display_adrr;
+ char ** indices;
 
 Circle *circles = NULL;
 
@@ -48,11 +52,12 @@ int count_etat=0;
 Etat * etats=NULL;
 
 GtkWidget* drawing_area;  
-double center_x = 300;
-double center_y = 200;
-double radius = 100;
+double center_x = 350;
+double center_y = 350;
+double radius = 600;
 double angle_step;
 int MAX_CLIENTS=0;
+
 
 
 
@@ -85,7 +90,7 @@ static void on_check_button_toggled(GtkToggleButton *toggle_button, gpointer use
 
 
 
-static void draw_circle(cairo_t* cr, double x, double y, double radius, const GdkRGBA* color,const char* text) {
+static void draw_circle(cairo_t* cr, double x, double y, double radius, const GdkRGBA* color,const char* text,const char* texti) {
     
     cairo_set_source_rgba(cr, color->red, color->green, color->blue, color->alpha);
     cairo_arc(cr, x, y, radius, 0, 2 * M_PI);
@@ -102,6 +107,10 @@ static void draw_circle(cairo_t* cr, double x, double y, double radius, const Gd
     cairo_set_font_size(cr, 12.0);
     cairo_move_to(cr,x-30,y-35);
     cairo_show_text(cr, text);
+    cairo_set_source_rgba(cr, 255.0, 255.0, 255.0, 1.0);
+    cairo_set_font_size(cr, 12.0);
+    cairo_move_to(cr,x+30,y);
+    cairo_show_text(cr, texti);
 
 }
 void draw_text(GtkWidget *widget, cairo_t *cr, double x, double y, const char* text)
@@ -120,66 +129,10 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
     //text labels
     Text label;
     label.text="Network ring Graph";
-    label.x=165;
-    label.y=350;
+    label.x=350;
+    label.y=750;
     draw_text(widget , cr,label.x, label.y, label.text);
-    Text guide;
-    guide.text=" Guide couleurs:";
-    guide.x=470;
-    guide.y=70;
-    draw_text(widget , cr,guide.x, guide.y, guide.text);
-     Text map1;
-    map1.text=" Envoi de messages";
-    map1.x=500;
-    map1.y=100;
-    cairo_text_extents_t extents;
-    cairo_text_extents(cr, map1.text, &extents);
-    //green rectangular
-    double text_width = extents.width;
-    double text_height = extents.height;
-    cairo_set_source_rgba(cr, 0.14902, 0.30196, 0.0, 1.0);
-    cairo_rectangle(cr, map1.x -25, map1.y - text_height -8, text_width + 65, text_height + 50);
-    cairo_fill(cr);
-    cairo_set_line_width(cr, 1.0);
-    cairo_set_source_rgba(cr, 0.0, 0.0, 1.0, 1.0);
-    cairo_stroke(cr);
-
-    draw_text(widget , cr,map1.x, map1.y, map1.text);
-    Text map2;
-    map2.text=" Récéption de messages";
-    map2.x=500;
-    map2.y=130;
-    draw_text(widget , cr,map2.x, map2.y, map2.text);
-    //guide circles
-    Circle g1;
-    g1.radius=10;
-    g1.x=489;
-    g1.y=95;
-    g1.color.green = 0.50196;
-    g1.color.red = 0.0;
-    g1.color.blue = 0.50196;
-    g1.color.alpha=1.0;
-    draw_circle(cr, g1.x, g1.y, g1.radius, &g1.color, NULL);
-    
-    Circle g2;
-    g2.radius=10;
-    g2.x=489;
-    g2.y=125;
-    g2.color.green = 0.6;
-    g2.color.red = 0.90196;
-    g2.color.blue = 0.0;
-    g2.color.alpha=1.0;
-    draw_circle(cr, g2.x, g2.y, g2.radius, &g2.color, NULL);
-
    
-   
-
-
-
-
-
-
-
     // Draw a line between each two circles
     for (int i = 0; i < num_clients-1; i++) {
         for (int j = 0; j < num_clients; j++)
@@ -189,8 +142,8 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
                 Circle* circle2 = &circles[j];
                 cairo_set_line_width(cr, 2);
                 cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.8);
-                cairo_move_to(cr, circle1->x, circle1->y);
-                cairo_line_to(cr, circle2->x, circle2->y);
+                cairo_move_to(cr, circle2->x, circle2->y);
+                cairo_line_to(cr, circle1->x, circle1->y);
                 cairo_stroke(cr);
 
             }
@@ -204,7 +157,7 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
     // Iterate over all circles and draw each one
     for (int i = 0; i < num_clients; i++) {
         Circle* circle = &circles[i];
-        draw_circle(cr, circle->x, circle->y, circle->radius, &circle->color, circle->text);
+        draw_circle(cr, circle->x, circle->y, circle->radius, &circle->color, circle->text,circle->nom_etat);
     }
     
 
@@ -223,7 +176,7 @@ void* gui_thread(void* arg) {
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Nodes");
-    gtk_window_set_default_size(GTK_WINDOW(window), 700, 600);
+    gtk_window_set_default_size(GTK_WINDOW(window), 1000, 1000);
     GdkRGBA color = { 0.0, 0.0, 0.2, 1.0 };  // blue color (RGBA fs)
     gtk_widget_override_background_color(window, GTK_STATE_FLAG_NORMAL, &color);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
@@ -237,7 +190,7 @@ void* gui_thread(void* arg) {
 
 
     drawing_area = gtk_drawing_area_new();
-    gtk_widget_set_size_request(drawing_area, 600, 500);
+    gtk_widget_set_size_request(drawing_area, 800, 800);
     gtk_box_pack_start(GTK_BOX(vbox), drawing_area, FALSE, FALSE, 0);
     g_signal_connect(drawing_area, "draw", G_CALLBACK(on_draw), &circles[0]);
 
@@ -331,7 +284,7 @@ void* server_thread(void* arg) {
                 continue;
             }
 
-            
+            printf("Client:%s:%d\n",inet_ntoa(address.sin_addr),ntohs(address.sin_port));
             
           
             if (num_clients < MAX_CLIENTS) {
@@ -341,16 +294,17 @@ void* server_thread(void* arg) {
                   Circle new_circle;
                 
                   
-                    
-                    new_circle.radius = 30;
+                    new_circle.con_to=(int *) malloc(MAX_CLIENTS * sizeof(int));
+                    new_circle.radius = 20;
                     new_circle.color.alpha = 1;
                     new_circle.socket_fd=new_socket;
+                    new_circle.addrs=address;
                     add_c[num_clients]=address;
-                    printf("Port %d\n",ntohs(add_c[num_clients].sin_port));
                     char str[10];
                     sprintf(str,"Site %d",num_clients);
                     strcpy(indices[num_clients], str);
                     new_circle.text=indices[num_clients];
+                    new_circle.nom_etat="Default";
                     char strr[30];
                     sprintf(strr,"%s(%d)",inet_ntoa(address.sin_addr),ntohs(address.sin_port));
                     strcpy(display_adrr[num_clients],strr);  
@@ -370,12 +324,13 @@ void* server_thread(void* arg) {
             sd = circles[i].socket_fd;
             if (FD_ISSET(sd, &use)) {
                  char buffer[1024] = {0};
-                              while (1) {
+                              
                                 
                                int n = recv(sd, buffer, sizeof(buffer), MSG_DONTWAIT);
                                 if (n == -1) {
-                                    // no data available
-                                    usleep(1000); // sleep for 1 ms to avoid busy-waiting
+                                    printf("erreur recv\n");
+                                    break;
+                                   // usleep(1000); // sleep for 1 ms to avoid busy-waiting
                                 } else if (n == 0) {
                                     // connection closed by client
                                     printf("Connection closed by client\n");
@@ -384,9 +339,9 @@ void* server_thread(void* arg) {
                                     if (n == sizeof(struct sockaddr_in)) {
                                         struct sockaddr_in server_address;
                                         memcpy(&server_address, buffer, sizeof(struct sockaddr_in ));
-                                        printf("Received adresse %d\n",ntohs(server_address.sin_port) );
+                                        printf("Received adresse %s: %d\n",inet_ntoa(server_address.sin_addr),ntohs(server_address.sin_port) );
                                           for(int j=0;j<MAX_CLIENTS;j++){
-                                          if (memcmp(&add_c[j],&server_address, sizeof(server_address)) == 0) {
+                                          if (memcmp(&circles[j].addrs,&server_address, sizeof(server_address)) == 0) {
                                           circles[i].con_to[j]=1;
                                       }
 
@@ -403,6 +358,7 @@ void* server_thread(void* arg) {
                                             printf(" Socket %d:%d\n",sd,f);
                                             circles[i].color=etats[j].color;
                                             
+                                            
                                             gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
                             
                                         }
@@ -412,7 +368,7 @@ void* server_thread(void* arg) {
                                     } else {
                                         printf("Received invalid data\n");
                                     }
-                                }
+                                
                             }
                 
     
@@ -468,6 +424,14 @@ pthread_t gui_tid, server_tid;
     //intialize circles and adresses tables
     circles = (Circle *) malloc(n * sizeof(Circle));
     add_c = ( struct sockaddr_in *) malloc(n * sizeof(struct sockaddr_in));
+    display_adrr = (char **)malloc(n * sizeof(char *));
+    for (int i = 0; i < n; i++) {
+        display_adrr[i] = (char *)malloc(50 * sizeof(char));
+    }
+    indices = (char **)malloc(n * sizeof(char *));
+    for (int i = 0; i < n; i++) {
+        indices[i] = (char *)malloc(50 * sizeof(char));
+    }
     MAX_CLIENTS=n;
     angle_step=2*M_PI /n;
     int choix;
@@ -483,12 +447,14 @@ pthread_t gui_tid, server_tid;
 //if the clien choose letting us handle the colors, he should provid strings of all names of status
 //example, he will provid "wait" and we will give a color for wait
 int numE;
+
 if(choix==0){
    
 
     srand(time(NULL)); // seed the random number generator
 int i=0;
     while (fgets(line, sizeof(line), fp)) {
+        
        sscanf(line, "%d", &numE);
        printf("Number: %d\n", numE);
       Etat newEtat;
@@ -501,6 +467,7 @@ int i=0;
         double green = ((double)r + 0.001) / nbr_etats;
         double blue = 1.0 - ((double)i+1.0 / nbr_etats);
         newEtat.numEtat=numE;
+       
         newEtat.color.red = red > 1.0 ? 1.0/(double)i : red;
         newEtat.color.green = green > 1.0 ? 1.0/(double)i+0.01 : green;
         newEtat.color.blue = blue < 0.0 ? 1.0/(double)i+0.02: blue;
@@ -519,6 +486,9 @@ int i=0;
 if(choix==1){
     
      while (fgets(line, sizeof(line), fp)) {
+        
+       
+
        sscanf(line, "%d", &numE);
        printf("Number: %d\n", numE);
      
