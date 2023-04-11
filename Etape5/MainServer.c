@@ -35,7 +35,7 @@ typedef struct {
 typedef struct {
     int numEtat;
     GdkRGBA color;
-    const char* descEtat;
+    char* descEtat;
   
 } Etat;
 
@@ -93,7 +93,7 @@ static void on_check_button_toggled(GtkToggleButton *toggle_button, gpointer use
 
 
 
-static void draw_circle(cairo_t* cr, double x, double y, double radius, const GdkRGBA* color,const char* text,const char* texti) {
+static void draw_circle(cairo_t* cr, double x, double y, double radius, const GdkRGBA* color,const char* text, char* texti) {
     
     cairo_set_source_rgba(cr, color->red, color->green, color->blue, color->alpha);
     cairo_arc(cr, x, y, radius, 0, 2 * M_PI);
@@ -333,10 +333,10 @@ void* server_thread(void* arg) {
          for (int i = 0; i < num_clients; i++) {
             sd = circles[i].socket_fd;
             if (FD_ISSET(sd, &use)) {
-                 char buffer[1024] = {0};
+                 char buffer[sizeof(struct sockaddr_in)] = {0};
                               
                                 
-                               int n = recv(sd, buffer, sizeof(buffer), MSG_DONTWAIT);
+                               int n = recv(sd, buffer, sizeof(buffer), 0);
                                 if (n == -1) {
                                     printf("erreur recv\n");
                                     break;
@@ -413,7 +413,7 @@ pthread_t gui_tid, server_tid;
 
  FILE* fp;
     char line[4000];
-    int nbr_etats;
+    int nbr_etats=0;
 
     fp = fopen("etat.txt", "r");
     if (fp == NULL) {
@@ -428,6 +428,7 @@ pthread_t gui_tid, server_tid;
     
     //initialize a table 
     etats = (Etat *) malloc(nbr_etats * sizeof(Etat));
+     count_etat = 0;
     int n =0;
     //get nbr clients
      if (fgets(line, sizeof(line), fp)) {
@@ -466,11 +467,16 @@ if(choix==0){
 
     srand(time(NULL)); // seed the random number generator
 int i=0;
-    while (fgets(line, sizeof(line), fp)) {
+    char des[50];
+     while (fgets(line, sizeof(line), fp)) {
         
-       sscanf(line, "%d", &numE);
-       printf("Number: %d\n", numE);
-      Etat newEtat;
+       
+       Etat newEtat;
+       sscanf(line, "%d:%s", &numE,des);
+       printf("Number: %d : %s\n", numE,des);
+     
+        strcpy(newEtat.descEtat,des);
+      
           double r = (double)rand() / RAND_MAX;
 
     
@@ -498,14 +504,15 @@ int i=0;
 
 if(choix==1){
     
+    char des[50];
      while (fgets(line, sizeof(line), fp)) {
         
        
-
-       sscanf(line, "%d", &numE);
-       printf("Number: %d\n", numE);
-     
         Etat newEtat;
+        sscanf(line, "%d:%s", &numE,des);
+       printf("Number: %d : %s\n", numE,des);
+     
+        strcpy(newEtat.descEtat,des);
 
         char red[50];
         char green[50];
@@ -524,14 +531,14 @@ if(choix==1){
 
 }
 
- for(int i=0; i<nbr_etats; i++){
+ for(int i=0; i<count_etat; i++){
     
         
-        printf("%d %f %f %f\n", etats[i].numEtat, etats[i].color.red, etats[i].color.green, etats[i].color.blue);
+        printf("%d %s %f %f %f\n", etats[i].numEtat,etats[i].descEtat, etats[i].color.red, etats[i].color.green, etats[i].color.blue);
   
     }   
 
-count_etat=nbr_etats;
+
     fclose(fp);
 // Create GUI thread
 if (pthread_create(&gui_tid, NULL, gui_thread, NULL)) {
@@ -550,4 +557,3 @@ pthread_join(server_tid, NULL);
 
 return 0;
 }
-
