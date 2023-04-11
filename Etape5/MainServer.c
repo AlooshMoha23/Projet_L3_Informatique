@@ -39,7 +39,7 @@ typedef struct {
   
 } Etat;
 
-struct sockaddr_in *add_c;
+//struct sockaddr_in *add_c;
  char ** display_adrr;
  char ** indices;
 
@@ -52,11 +52,14 @@ int count_etat=0;
 Etat * etats=NULL;
 
 GtkWidget* drawing_area;  
-double center_x = 400;
+double center_x = 550;
 double center_y = 350 ;
-double radius = 150;
-double angle_step;
+double radius = 100;
+double angle_step=0;
+
 int MAX_CLIENTS=0;
+double angle = 0;
+
 
 
 
@@ -129,7 +132,7 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
     //text labels
     Text label;
     label.text="Network ring Graph";
-    label.x=350;
+    label.x=450;
     label.y=750;
     draw_text(widget , cr,label.x, label.y, label.text);
    
@@ -295,11 +298,14 @@ void* server_thread(void* arg) {
                 
                   
                     new_circle.con_to=(int *) malloc(MAX_CLIENTS * sizeof(int));
+                    for (int i = 0; i < MAX_CLIENTS; i++) {
+                    new_circle.con_to[i] = -1;
+                }
                     new_circle.radius = 20;
                     new_circle.color.alpha = 1;
                     new_circle.socket_fd=new_socket;
                     new_circle.addrs=adrr;
-                    add_c[num_clients]=adrr;
+                    //add_c[num_clients]=adrr;
                     char str[10];
                     sprintf(str,"Site %d",num_clients);
                     strcpy(indices[num_clients], str);
@@ -308,9 +314,13 @@ void* server_thread(void* arg) {
                     char strr[30];
                     sprintf(strr,"%s(%d)",inet_ntoa(adrr.sin_addr),ntohs(adrr.sin_port));
                     strcpy(display_adrr[num_clients],strr);  
-                    new_circle.x = center_x + radius * cos(num_clients * angle_step);
-                    new_circle.y = center_y + radius * sin(num_clients * angle_step);
-                    circles[num_clients++] = new_circle;
+                    
+                    
+                    new_circle.x = center_x + radius * cos(angle);
+                    new_circle.y = center_y + radius * sin(angle);
+                    circles[num_clients] = new_circle;
+                    num_clients++;
+                    angle += angle_step;
                     gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
                   }
                 printf("New connection, socket fd is %d, num_clients is %d\n", new_socket, num_clients-1);
@@ -320,7 +330,7 @@ void* server_thread(void* arg) {
 
            else{
         // Check if any of the client sockets have activity
-         for (int i = 0; i < max_sd+1; i++) {
+         for (int i = 0; i < num_clients; i++) {
             sd = circles[i].socket_fd;
             if (FD_ISSET(sd, &use)) {
                  char buffer[1024] = {0};
@@ -426,7 +436,7 @@ pthread_t gui_tid, server_tid;
     }
     //intialize circles and adresses tables
     circles = (Circle *) malloc(n * sizeof(Circle));
-    add_c = ( struct sockaddr_in *) malloc(n * sizeof(struct sockaddr_in));
+    //add_c = ( struct sockaddr_in *) malloc(n * sizeof(struct sockaddr_in));
     display_adrr = (char **)malloc(n * sizeof(char *));
     for (int i = 0; i < n; i++) {
         display_adrr[i] = (char *)malloc(50 * sizeof(char));
@@ -540,3 +550,4 @@ pthread_join(server_tid, NULL);
 
 return 0;
 }
+
