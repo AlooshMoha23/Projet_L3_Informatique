@@ -52,9 +52,9 @@ int count_etat=0;
 Etat * etats=NULL;
 
 GtkWidget* drawing_area;  
-double center_x = 350;
-double center_y = 350;
-double radius = 600;
+double center_x = 400;
+double center_y = 350 ;
+double radius = 150;
 double angle_step;
 int MAX_CLIENTS=0;
 
@@ -134,16 +134,16 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
     draw_text(widget , cr,label.x, label.y, label.text);
    
     // Draw a line between each two circles
-    for (int i = 0; i < num_clients-1; i++) {
+    for (int i = 0; i < num_clients; i++) {
         for (int j = 0; j < num_clients; j++)
         {
             if(circles[i].con_to[j]==1){
-                Circle* circle1 = &circles[i];
-                Circle* circle2 = &circles[j];
+                Circle* circle1 = &circles[j];
+                Circle* circle2 = &circles[i];
                 cairo_set_line_width(cr, 2);
-                cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.8);
-                cairo_move_to(cr, circle2->x, circle2->y);
-                cairo_line_to(cr, circle1->x, circle1->y);
+                cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
+                cairo_move_to(cr, circle1->x, circle1->y);
+                cairo_line_to(cr, circle2->x, circle2->y);
                 cairo_stroke(cr);
 
             }
@@ -190,7 +190,7 @@ void* gui_thread(void* arg) {
 
 
     drawing_area = gtk_drawing_area_new();
-    gtk_widget_set_size_request(drawing_area, 800, 800);
+    gtk_widget_set_size_request(drawing_area, 1000, 900);
     gtk_box_pack_start(GTK_BOX(vbox), drawing_area, FALSE, FALSE, 0);
     g_signal_connect(drawing_area, "draw", G_CALLBACK(on_draw), &circles[0]);
 
@@ -276,15 +276,15 @@ void* server_thread(void* arg) {
         if ((activity < 0) && (errno!=EINTR)) {
             printf("select error");
         }
-
+        struct sockaddr_in adrr;
         // If incoming connection, accept and add new circle
         if (FD_ISSET(server_fd, &use)) {
-            if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0) {
+            if ((new_socket = accept(server_fd, (struct sockaddr *)&adrr, (socklen_t*)&addrlen))<0) {
                 perror("accept");
                 continue;
             }
 
-            printf("Client:%s:%d\n",inet_ntoa(address.sin_addr),ntohs(address.sin_port));
+            printf("Client:%s:%d\n",inet_ntoa(adrr.sin_addr),ntohs(adrr.sin_port));
             
           
             if (num_clients < MAX_CLIENTS) {
@@ -298,15 +298,15 @@ void* server_thread(void* arg) {
                     new_circle.radius = 20;
                     new_circle.color.alpha = 1;
                     new_circle.socket_fd=new_socket;
-                    new_circle.addrs=address;
-                    add_c[num_clients]=address;
+                    new_circle.addrs=adrr;
+                    add_c[num_clients]=adrr;
                     char str[10];
                     sprintf(str,"Site %d",num_clients);
                     strcpy(indices[num_clients], str);
                     new_circle.text=indices[num_clients];
                     new_circle.nom_etat="Default";
                     char strr[30];
-                    sprintf(strr,"%s(%d)",inet_ntoa(address.sin_addr),ntohs(address.sin_port));
+                    sprintf(strr,"%s(%d)",inet_ntoa(adrr.sin_addr),ntohs(adrr.sin_port));
                     strcpy(display_adrr[num_clients],strr);  
                     new_circle.x = center_x + radius * cos(num_clients * angle_step);
                     new_circle.y = center_y + radius * sin(num_clients * angle_step);
@@ -340,9 +340,12 @@ void* server_thread(void* arg) {
                                         struct sockaddr_in server_address;
                                         memcpy(&server_address, buffer, sizeof(struct sockaddr_in ));
                                         printf("Received adresse %s: %d\n",inet_ntoa(server_address.sin_addr),ntohs(server_address.sin_port) );
-                                          for(int j=0;j<MAX_CLIENTS;j++){
-                                          if (memcmp(&circles[j].addrs,&server_address, sizeof(server_address)) == 0) {
+                                          for(int j=0;j<num_clients;j++){
+                                            printf("address of client %d %s: %d\n",j,inet_ntoa(circles[j].addrs.sin_addr),ntohs(circles[j].addrs.sin_port) );
+                                          if (memcmp(&circles[j].addrs.sin_addr,&server_address.sin_addr, sizeof(server_address.sin_addr) )== 0 &&
+                                          memcmp(&circles[j].addrs.sin_port,&server_address.sin_port, sizeof(server_address.sin_port) )== 0 ) {
                                           circles[i].con_to[j]=1;
+                                          printf("See if compared : %d\n",circles[i].con_to[j]);
                                       }
 
                                     }
