@@ -52,8 +52,8 @@ int count_etat=0;
 Etat * etats=NULL;
 
 GtkWidget* drawing_area;  
-double center_x = 550;
-double center_y = 350 ;
+double center_x = 500;
+double center_y = 450 ;
 double radius = 100;
 double angle_step=0;
 
@@ -110,9 +110,9 @@ static void draw_circle(cairo_t* cr, double x, double y, double radius, const Gd
     cairo_set_font_size(cr, 12.0);
     cairo_move_to(cr,x-30,y-35);
     cairo_show_text(cr, text);
-    cairo_set_source_rgba(cr, 255.0, 255.0, 255.0, 1.0);
+    cairo_set_source_rgba(cr, 1.0, 0.6, 0.0, 1.0);
     cairo_set_font_size(cr, 12.0);
-    cairo_move_to(cr,x+30,y);
+    cairo_move_to(cr,x+30,y-10);
     cairo_show_text(cr, texti);
 
 }
@@ -120,7 +120,7 @@ void draw_text(GtkWidget *widget, cairo_t *cr, double x, double y, const char* t
 {
 
     cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-    cairo_set_font_size(cr, 12.0);
+    cairo_set_font_size(cr, 14.0);
     cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
     cairo_move_to(cr, x,y);
     cairo_show_text(cr, text);
@@ -131,8 +131,8 @@ void draw_text(GtkWidget *widget, cairo_t *cr, double x, double y, const char* t
 static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
     //text labels
     Text label;
-    label.text="Network ring Graph";
-    label.x=450;
+    label.text="Suivi de l'éxécution";
+    label.x=430;
     label.y=750;
     draw_text(widget , cr,label.x, label.y, label.text);
    
@@ -178,7 +178,7 @@ void* gui_thread(void* arg) {
     gtk_init(NULL, NULL);
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Nodes");
+    gtk_window_set_title(GTK_WINDOW(window), "Graph d'états");
     gtk_window_set_default_size(GTK_WINDOW(window), 1000, 1000);
     GdkRGBA color = { 0.0, 0.0, 0.2, 1.0 };  // blue color (RGBA fs)
     gtk_widget_override_background_color(window, GTK_STATE_FLAG_NORMAL, &color);
@@ -372,6 +372,9 @@ void* server_thread(void* arg) {
                                             circles[i].color=etats[j].color;
                                             
                                             
+                                            circles[i].nom_etat=etats[j].descEtat;
+                                            
+                                            
                                             gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
                             
                                         }
@@ -461,21 +464,26 @@ pthread_t gui_tid, server_tid;
 //if the clien choose letting us handle the colors, he should provid strings of all names of status
 //example, he will provid "wait" and we will give a color for wait
 int numE;
+char ** desc;
+desc = (char **)malloc(nbr_etats * sizeof(char *));
+    for (int i = 0; i < nbr_etats; i++) {
+        desc[i] = (char *)malloc(50 * sizeof(char));
+    }
 
 if(choix==0){
    
 
     srand(time(NULL)); // seed the random number generator
 int i=0;
-    char des[50];
+   
      while (fgets(line, sizeof(line), fp)) {
         
-       
+        char des[50];
        Etat newEtat;
        sscanf(line, "%d:%s", &numE,des);
        printf("Number: %d : %s\n", numE,des);
-     
-        strcpy(newEtat.descEtat,des);
+       
+        strcpy(desc[count_etat],des);
       
           double r = (double)rand() / RAND_MAX;
 
@@ -486,7 +494,7 @@ int i=0;
         double green = ((double)r + 0.001) / nbr_etats;
         double blue = 1.0 - ((double)i+1.0 / nbr_etats);
         newEtat.numEtat=numE;
-       
+        newEtat.descEtat=desc[count_etat];
         newEtat.color.red = red > 1.0 ? 1.0/(double)i : red;
         newEtat.color.green = green > 1.0 ? 1.0/(double)i+0.01 : green;
         newEtat.color.blue = blue < 0.0 ? 1.0/(double)i+0.02: blue;
@@ -504,15 +512,15 @@ int i=0;
 
 if(choix==1){
     
-    char des[50];
+   
      while (fgets(line, sizeof(line), fp)) {
-        
+         char des[50];
        
         Etat newEtat;
         sscanf(line, "%d:%s", &numE,des);
        printf("Number: %d : %s\n", numE,des);
      
-        strcpy(newEtat.descEtat,des);
+         strcpy(desc[count_etat],des);
 
         char red[50];
         char green[50];
@@ -521,6 +529,7 @@ if(choix==1){
         fgets(line, 4000, fp);
         sscanf(line, "%d %s %s %s", &numE,red, green, blue);
         newEtat.numEtat=numE;
+        newEtat.descEtat=desc[count_etat];
         newEtat.color.red=atof(red);
         newEtat.color.green=atof(green);
         newEtat.color.blue=atof(blue);
