@@ -39,7 +39,6 @@ typedef struct {
   
 } Etat;
 
-//struct sockaddr_in *add_c;
  char ** display_adrr;
  char ** indices;
 
@@ -54,7 +53,7 @@ Etat * etats=NULL;
 GtkWidget* drawing_area;  
 double center_x = 500;
 double center_y = 450 ;
-double radius = 100;
+double radius = 180;
 double angle_step=0;
 
 int MAX_CLIENTS=0;
@@ -133,7 +132,7 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
     Text label;
     label.text="Suivi de l'éxécution";
     label.x=430;
-    label.y=750;
+    label.y=880;
     draw_text(widget , cr,label.x, label.y, label.text);
    
     // Draw a line between each two circles
@@ -144,7 +143,7 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
                 Circle* circle1 = &circles[j];
                 Circle* circle2 = &circles[i];
                 cairo_set_line_width(cr, 2);
-                cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
+                cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.5);
                 cairo_move_to(cr, circle1->x, circle1->y);
                 cairo_line_to(cr, circle2->x, circle2->y);
                 cairo_stroke(cr);
@@ -178,7 +177,7 @@ void* gui_thread(void* arg) {
     gtk_init(NULL, NULL);
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Graph d'états");
+    gtk_window_set_title(GTK_WINDOW(window), "Interface");
     gtk_window_set_default_size(GTK_WINDOW(window), 1000, 1000);
     GdkRGBA color = { 0.0, 0.0, 0.2, 1.0 };  // blue color (RGBA fs)
     gtk_widget_override_background_color(window, GTK_STATE_FLAG_NORMAL, &color);
@@ -229,8 +228,7 @@ void* server_thread(void* arg) {
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
-    int flags = fcntl(server_fd, F_GETFL, 0);
-    fcntl(server_fd, F_SETFL, flags | O_NONBLOCK);
+    
     // Bind the socket to a specific port
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
@@ -305,7 +303,6 @@ void* server_thread(void* arg) {
                     new_circle.color.alpha = 1;
                     new_circle.socket_fd=new_socket;
                     new_circle.addrs=adrr;
-                    //add_c[num_clients]=adrr;
                     char str[10];
                     sprintf(str,"Site %d",num_clients);
                     strcpy(indices[num_clients], str);
@@ -370,11 +367,7 @@ void* server_thread(void* arg) {
 
                                             printf(" Socket %d:%d\n",sd,f);
                                             circles[i].color=etats[j].color;
-                                            
-                                            
                                             circles[i].nom_etat=etats[j].descEtat;
-                                            
-                                            
                                             gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
                             
                                         }
@@ -440,7 +433,6 @@ pthread_t gui_tid, server_tid;
     }
     //intialize circles and adresses tables
     circles = (Circle *) malloc(n * sizeof(Circle));
-    //add_c = ( struct sockaddr_in *) malloc(n * sizeof(struct sockaddr_in));
     display_adrr = (char **)malloc(n * sizeof(char *));
     for (int i = 0; i < n; i++) {
         display_adrr[i] = (char *)malloc(50 * sizeof(char));
@@ -478,17 +470,12 @@ int i=0;
    
      while (fgets(line, sizeof(line), fp)) {
         
-        char des[50];
+       char des[50];
        Etat newEtat;
        sscanf(line, "%d:%s", &numE,des);
        printf("Number: %d : %s\n", numE,des);
-       
-        strcpy(desc[count_etat],des);
-      
-          double r = (double)rand() / RAND_MAX;
-
-    
-
+       strcpy(desc[count_etat],des);
+        double r = (double)rand() / RAND_MAX;
 
         double red = (double)i / nbr_etats;
         double green = ((double)r + 0.001) / nbr_etats;
@@ -514,20 +501,15 @@ if(choix==1){
     
    
      while (fgets(line, sizeof(line), fp)) {
-         char des[50];
-       
+        char des[50];
         Etat newEtat;
-        sscanf(line, "%d:%s", &numE,des);
-       printf("Number: %d : %s\n", numE,des);
-     
-         strcpy(desc[count_etat],des);
-
         char red[50];
         char green[50];
         char blue[50];
         //Example wait 0.1 1.0 0.5
-        fgets(line, 4000, fp);
-        sscanf(line, "%d %s %s %s", &numE,red, green, blue);
+       
+        sscanf(line, "%d:%s %s %s %s", &numE,des,red, green, blue);
+        strcpy(desc[count_etat],des);
         newEtat.numEtat=numE;
         newEtat.descEtat=desc[count_etat];
         newEtat.color.red=atof(red);
