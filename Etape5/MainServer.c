@@ -257,6 +257,7 @@ void* server_thread(void* arg) {
                     }
                     else if(MAX_CLIENTS<100){
                          new_circle.radius = 10;
+                         radius=180;
                     }
                     else if(MAX_CLIENTS<150){
                          new_circle.radius = 5;
@@ -264,22 +265,20 @@ void* server_thread(void* arg) {
                     }
                     else if(MAX_CLIENTS<250){
                         new_circle.radius=4;
+                        radius=220;
                     }
                     new_circle.color.alpha = 1;
                     new_circle.socket_fd=new_socket;
                     new_circle.addrs=adrr;
-                    new_circle.text="Default";
-                    new_circle.nom_etat="Default";
+                    new_circle.nom_etat="Connecté";
                     char strr[30];
                     sprintf(strr,"%s(%d)",inet_ntoa(adrr.sin_addr),ntohs(adrr.sin_port));
                     strcpy(display_adrr[num_clients],strr);  
+                    new_circle.text=display_adrr[num_clients];
                     new_circle.indice=0;
                     new_circle.count_i=0;
-                   // new_circle.x = center_x + radius * cos(num_clients * angle_step);
-                   // new_circle.y = center_y + radius * sin(num_clients * angle_step);
                     circles[num_clients] = new_circle;
                     num_clients++;
-                    //gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
                   }
                 printf("Nouvelle connexion, socket fd  %d, numéro client  %d\n", new_socket, num_clients-1);
             }
