@@ -494,5 +494,13 @@ if (pthread_create(&server_tid, NULL, server_thread, argv)) {
 // Wait for threads to finish
 pthread_join(gui_tid, NULL);
 pthread_join(server_tid, NULL);
+//free memory
+ free(etats);
+ free(circles); free(etats);
+    free(circles);
+    free(display_adrr);
+    free(indices);
+ free(display_adrr);
+ free(indices);
 return 0;
 }
