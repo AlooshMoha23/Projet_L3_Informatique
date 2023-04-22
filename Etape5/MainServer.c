@@ -11,6 +11,7 @@
 #include<string.h>
 #include <fcntl.h>
 #define min(x,y) x<y?x:y;
+//LD_PRELOAD=/lib/x86_64-linux-gnu/libpthread.so.0 ./p 3000 etat.txt to compile for me 
 
 typedef struct {
     double x;
@@ -55,6 +56,8 @@ double angle_step=0;
 
 int MAX_CLIENTS=0;
 int closed_count=0;
+int count_start=0;
+Text label;
 
 //Botton pour basculer les affichage des adresses et indice de sites
 static void on_check_button_toggled(GtkToggleButton *toggle_button, gpointer user_data)
@@ -109,25 +112,21 @@ void draw_text(GtkWidget *widget, cairo_t *cr, double x, double y, const char* t
 //Fonction de dessin 
 static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
     //text labels
-    Text label;
-    label.text="Suivi de l'éxécution";
-    label.x=430;
-    label.y=880;
-    label.color.red=1.0;
-    label.color.blue=1.0;
-    label.color.green=1.0;
-    label.color.alpha=1.0;
-    draw_text(widget , cr,label.x, label.y, label.text,&label.color);
-    if(closed_count==MAX_CLIENTS){
-    Text label;
-    label.text="(Exécution terminée)";
+    Text label1;
+    label1.text="Suivi de l'éxécution";
+    label1.x=430;
+    label1.y=880;
+    label1.color.red=1.0;
+    label1.color.blue=1.0;
+    label1.color.green=1.0;
+    label1.color.alpha=1.0;
+    draw_text(widget , cr,label1.x, label1.y, label1.text,&label1.color);
     label.x=590;
     label.y=880;
-    label.color.red=1.0;
-    label.color.blue=0.0;
-    label.color.green=0.0;
-    label.color.alpha=1.0;
-    draw_text(widget , cr,label.x, label.y, label.text,&label.color);}
+    draw_text(widget , cr,label.x, label.y, label.text,&label.color);
+    
+    
+    
     // Draw a line between each two circles
     for (int i = 0; i < num_clients; i++) {
         for (int j = 0; j < num_clients; j++)
@@ -248,11 +247,12 @@ void* server_thread(void* arg) {
             printf("Client:%s:%d\n",inet_ntoa(adrr.sin_addr),ntohs(adrr.sin_port));
             if (num_clients < MAX_CLIENTS) {
                 // Create new circle and add to array
-                  Circle new_circle;
+                    Circle new_circle;
                     new_circle.con_to=(int *) malloc(MAX_CLIENTS * sizeof(int));
                     for (int i = 0; i < MAX_CLIENTS; i++) {
-                    new_circle.con_to[i] = -1;
-                }   if(MAX_CLIENTS<50){
+                         new_circle.con_to[i] = -1;
+                    }   
+                    if(MAX_CLIENTS<50){
                     new_circle.radius = 20;
                     }
                     else if(MAX_CLIENTS<100){
@@ -284,83 +284,101 @@ void* server_thread(void* arg) {
             }
            else{
         // Check if any of the client sockets have activity
-         for (int i = 0; i < num_clients; i++) {
-            sd = circles[i].socket_fd;
-            if (FD_ISSET(sd, &use)) {
-                 char buffer[sizeof(struct sockaddr_in) ]={0};
-                               int n = recv(sd, buffer, sizeof(buffer), 0);
-                               circles[i].count_i++;
-                                if (n == -1) {
-                                    printf("erreur recv\n");
-                                    continue;
-                                } else if (n == 0) {
-                                    // connection closed by client
-                                    printf("Socket %d fermée par le client\n",sd);
-                                    circles[i].color = circles[i].last_color;
-                                    circles[i].nom_etat="Déconnecté";
-                                    close(sd);
-                                    FD_CLR(sd, &use); 
-                                    circles[i].socket_fd = -1;
-                                    closed_count++;
-                                    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
-                                    
-                                    
-                                    
-                                } else {
-                                        if(n == sizeof(struct sockaddr_in)) {
-                                              struct sockaddr_in server_address;
-                                              memcpy(&server_address, buffer, sizeof(struct sockaddr_in ));
-                                              printf("Adresse récue %s: %d\n",inet_ntoa(server_address.sin_addr),ntohs(server_address.sin_port) );
-                                              for(int j=0;j<num_clients;j++){
-                                                  printf("Adresse du client %d %s: %d\n",j,inet_ntoa(circles[j].addrs.sin_addr),ntohs(circles[j].addrs.sin_port) );
-                                                  if (memcmp(&circles[j].addrs.sin_addr,&server_address.sin_addr, sizeof(server_address.sin_addr) )== 0 &&
-                                                      memcmp(&circles[j].addrs.sin_port,&server_address.sin_port, sizeof(server_address.sin_port) )== 0 ) {
-                                                      circles[i].con_to[j]=1;
-                                                       printf("Comparaison reussite : %d\n",circles[i].con_to[j]);
+                for (int i = 0; i < num_clients; i++) {
+                sd = circles[i].socket_fd;
+                if (FD_ISSET(sd, &use)) {
+                    char buffer[sizeof(struct sockaddr_in) ]={0};
+                                int n = recv(sd, buffer, sizeof(buffer), 0);
+                                circles[i].count_i++;
+                                    if (n == -1) {
+                                        printf("erreur recv\n");
+                                        continue;
+                                    } else if (n == 0) {
+                                        // connection closed by client
+                                        printf("Socket %d fermée par le client\n",sd);
+                                        circles[i].color = circles[i].last_color;
+                                        circles[i].nom_etat="Déconnecté";
+                                        close(sd);
+                                        FD_CLR(sd, &use); 
+                                        circles[i].socket_fd = -1;
+                                        closed_count++;
+                                        if(closed_count==MAX_CLIENTS){
+                                        label.text="(Exécution terminée)";
+                                        label.color.red=1.0;
+                                        label.color.blue=0.0;
+                                        label.color.green=0.0;
+                                        label.color.alpha=1.0;}
+                                        gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
+                                        
+                                        
+                                        
+                                    } else {
+                                            if(n == sizeof(struct sockaddr_in)) {
+                                                struct sockaddr_in server_address;
+                                                memcpy(&server_address, buffer, sizeof(struct sockaddr_in ));
+                                                printf("Adresse récue %s: %d\n",inet_ntoa(server_address.sin_addr),ntohs(server_address.sin_port) );
+                                                for(int j=0;j<num_clients;j++){
+                                                    printf("Adresse du client %d %s: %d\n",j,inet_ntoa(circles[j].addrs.sin_addr),ntohs(circles[j].addrs.sin_port) );
+                                                    if (memcmp(&circles[j].addrs.sin_addr,&server_address.sin_addr, sizeof(server_address.sin_addr) )== 0 &&
+                                                        memcmp(&circles[j].addrs.sin_port,&server_address.sin_port, sizeof(server_address.sin_port) )== 0 ) {
+                                                        circles[i].con_to[j]=1;
+                                                        printf("Comparaison reussite : %d\n",circles[i].con_to[j]);
+                                                        }
                                                     }
                                                 }
-                                            }
-                                        else if (n == sizeof(int)) {
-                                                if(circles[i].count_i==1){
-                                                    int f;
-                                                    
-                                                    memcpy(&f, buffer, sizeof(f));
-                                                    int k=f-1;
-                                                    printf("L'indice du site: %d\n", f);
-                                                    circles[i].indice=f;
-                                                    char str[10];
-                                                    sprintf(str,"Site %d",f);
-                                                    strcpy(indices[k], str);
-                                                    circles[i].text=indices[k];
-                                                    circles[i].x = center_x + radius * cos(k * angle_step);
-                                                    circles[i].y = center_y + radius * sin(k * angle_step);
-                                                    printf("Coordonnées x:%f y:%f\n",circles[i].x,circles[i].y);
-                                                    gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
-                                                }
-                                                else{
-                                                    int f;
-                                                    memcpy(&f, buffer, sizeof(f));
-                                                    printf("Etat récu: %d\n", f);
-                                                    for(int j=0;j<count_etat;j++){
-                                        
-                                                        if(f==etats[j].numEtat){
+                                            else if (n == sizeof(int)) {
+                                                    if(circles[i].count_i==1){
+                                                        int f;
+                                                        
+                                                        memcpy(&f, buffer, sizeof(f));
+                                                        int k=f-1;
+                                                        printf("L'indice du site: %d\n", f);
+                                                        circles[i].indice=f;
+                                                        char str[10];
+                                                        sprintf(str,"Site %d",f);
+                                                        strcpy(indices[k], str);
+                                                        circles[i].text=indices[k];
+                                                        circles[i].x = center_x + radius * cos(k * angle_step);
+                                                        circles[i].y = center_y + radius * sin(k * angle_step);
+                                                        printf("Coordonnées x:%f y:%f\n",circles[i].x,circles[i].y);
+                                                        count_start++;
+                                                        label.text="(Connexion)";
+                                                        label.color.red=1.0;
+                                                        label.color.blue=0.4;
+                                                        label.color.green=0.0;
+                                                        label.color.alpha=1.0;
+            
+                                                        gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
+                                                    }
+                                                    else{
+                                                        int f;
+                                                        memcpy(&f, buffer, sizeof(f));
+                                                        printf("Etat récu: %d\n", f);
+                                                        for(int j=0;j<count_etat;j++){
+                                            
+                                                            if(f==etats[j].numEtat){
 
-                                                            printf(" Socket %d:%d\n",sd,f);
-                                                            circles[i].color=etats[j].color;
-                                                            circles[i].last_color=etats[j].color;
-                                                            circles[i].nom_etat=etats[j].descEtat;
-                                                            gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
-                                                        }                                                                        
+                                                                printf(" Socket %d:%d\n",sd,f);
+                                                                circles[i].color=etats[j].color;
+                                                                circles[i].last_color=etats[j].color;
+                                                                circles[i].nom_etat=etats[j].descEtat;
+                                                                label.text="(Exécusion en cours)";
+                                                                label.color.red=0.0;
+                                                                label.color.blue=0.0;
+                                                                label.color.green=1.0;
+                                                                label.color.alpha=1.0;
+                                                                gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
+                                                            }                                                                        
+                                                        }
                                                     }
-                                                }
-                                        
-                                        } else {
-                                                 printf("Received invalid data\n");
-                                                }
-                                       }                  
-                                    }
-                }
-                }                 
+                                            
+                                            } else {
+                                                    printf("Received invalid data:%s\n",buffer);
+                                                    }
+                                        }                  
+                                        }
+                    }
+                    }                 
     } 
     for (int i=0; i <= num_clients; ++i)
    {
@@ -371,11 +389,11 @@ void* server_thread(void* arg) {
 }
 int main(int argc, char *argv[]) {
     if (argc != 3){
-    printf("utilisation : %s PORT fichier_config, \n", argv[0]);
-    exit(1);
-  }
-pthread_t gui_tid, server_tid;
- FILE* fp;
+          printf("utilisation : %s PORT fichier_config, \n", argv[0]);
+          exit(1);
+    }
+    pthread_t gui_tid, server_tid;
+    FILE* fp;
     char line[4000];
     int nbr_etats=0;
     int n =0;
@@ -424,83 +442,79 @@ pthread_t gui_tid, server_tid;
     }
     MAX_CLIENTS=n;
     angle_step=2*M_PI /n;
-int numE;
-char ** desc;
-desc = (char **)malloc(nbr_etats * sizeof(char *));
+    int numE;
+    char ** desc;
+    desc = (char **)malloc(nbr_etats * sizeof(char *));
     for (int i = 0; i < nbr_etats; i++) {
-        desc[i] = (char *)malloc(50 * sizeof(char));
+         desc[i] = (char *)malloc(50 * sizeof(char));
     }
-if(choix==0){
-    srand(time(NULL)); // seed the random number generator
-int i=0;
-     while (fgets(line, sizeof(line), fp)) {
-        if (line[0] == '#') {
-              continue; // ignore lines that start with #
-        }
-       char des[50];
-       Etat newEtat;
-       sscanf(line, "%d:%s", &numE,des);
-       printf("Number: %d : %s\n", numE,des);
-       strcpy(desc[count_etat],des);
-        double r = (double)rand() / RAND_MAX;
-        double red = (double)i / nbr_etats;
-        double green = ((double)r + 0.001) / nbr_etats;
-        double blue = 1.0 - ((double)i+1.0 / nbr_etats);
-        newEtat.numEtat=numE;
-        newEtat.descEtat=desc[count_etat];
-        newEtat.color.red = red > 1.0 ? 1.0/(double)i : red;
-        newEtat.color.green = green > 1.0 ? 1.0/(double)i+0.01 : green;
-        newEtat.color.blue = blue < 0.0 ? 1.0/(double)i+0.02: blue;
-        newEtat.color.alpha = 1;
-        etats[count_etat++]=newEtat;
-        i++;
+    if(choix==0){
+         srand(time(NULL)); // seed the random number generator
+         int i=0;
+         while (fgets(line, sizeof(line), fp)) {
+               if (line[0] == '#') {
+                 continue; // ignore lines that start with #
+                }
+               char des[50];
+               Etat newEtat;
+               sscanf(line, "%d:%s", &numE,des);
+               printf("Number: %d : %s\n", numE,des);
+               strcpy(desc[count_etat],des);
+               double r = (double)rand() / RAND_MAX;
+               double red = (double)i / nbr_etats;
+               double green = ((double)r + 0.001) / nbr_etats;
+               double blue = 1.0 - ((double)i+1.0 / nbr_etats);
+               newEtat.numEtat=numE;
+               newEtat.descEtat=desc[count_etat];
+               newEtat.color.red = red > 1.0 ? 1.0/(double)i : red;
+               newEtat.color.green = green > 1.0 ? 1.0/(double)i+0.01 : green;
+               newEtat.color.blue = blue < 0.0 ? 1.0/(double)i+0.02: blue;
+               newEtat.color.alpha = 1;
+                etats[count_etat++]=newEtat;
+                i++;
+            }
     }
-}
-if(choix==1){
-     while (fgets(line, sizeof(line), fp)) {
-        if (line[0] == '#') {
-              continue; // ignore lines that start with #
-        }
-        char des[50];
-        Etat newEtat;
-        char red[50];
-        char green[50];
-        char blue[50];
-        sscanf(line, "%d:%s %s %s %s", &numE,des,red, green, blue);
-        strcpy(desc[count_etat],des);
-        newEtat.numEtat=numE;
-        newEtat.descEtat=desc[count_etat];
-        newEtat.color.red=atof(red);
-        newEtat.color.green=atof(green);
-        newEtat.color.blue=atof(blue);
-        newEtat.color.alpha=1;
-        etats[count_etat++]=newEtat;
-    } 
-}
- for(int i=0; i<count_etat; i++){
+    if(choix==1){
+         while (fgets(line, sizeof(line), fp)) {
+            if (line[0] == '#') {
+                continue; // ignore lines that start with #
+            }
+            char des[50];
+            Etat newEtat;
+            char red[50];
+            char green[50];
+            char blue[50];
+            sscanf(line, "%d:%s %s %s %s", &numE,des,red, green, blue);
+            strcpy(desc[count_etat],des);
+            newEtat.numEtat=numE;
+            newEtat.descEtat=desc[count_etat];
+            newEtat.color.red=atof(red);
+            newEtat.color.green=atof(green);
+            newEtat.color.blue=atof(blue);
+            newEtat.color.alpha=1;
+            etats[count_etat++]=newEtat;
+        } 
+    }
+    for(int i=0; i<count_etat; i++){
         printf("%d %s %f %f %f\n", etats[i].numEtat,etats[i].descEtat, etats[i].color.red, etats[i].color.green, etats[i].color.blue);
     }   
     fclose(fp);
-// Create GUI thread
-if (pthread_create(&gui_tid, NULL, gui_thread, NULL)) {
-    fprintf(stderr, "Error creating GUI thread\n");
-    return 1;
-}
-// Create server thread
-if (pthread_create(&server_tid, NULL, server_thread, argv)) {
-    fprintf(stderr, "Error creating server thread\n");
-    return 1;
-}
-// Wait for threads to finish
-pthread_join(gui_tid, NULL);
-pthread_join(server_tid, NULL);
-//free memory
- free(etats);
- free(circles); free(etats);
+    // Create GUI thread
+    if (pthread_create(&gui_tid, NULL, gui_thread, NULL)) {
+        fprintf(stderr, "Error creating GUI thread\n");
+        return 1;
+    }
+    // Create server thread
+    if (pthread_create(&server_tid, NULL, server_thread, argv)) {
+        fprintf(stderr, "Error creating server thread\n");
+        return 1;
+    }
+    // Wait for threads to finish
+    pthread_join(gui_tid, NULL);
+    pthread_join(server_tid, NULL);
+    free(etats);
     free(circles);
     free(display_adrr);
     free(indices);
- free(display_adrr);
- free(indices);
-return 0;
+    return 0;
 }
