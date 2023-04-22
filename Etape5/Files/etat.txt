@@ -1,7 +1,14 @@
+#Nombre de sites
 4
-40
+#Nombre d'états
+4
+#Choix(O ou 1)
+#1->Vous saisissez les couleurs en format RGB
+#0->Couleurs générées par le programme
 0
+#Liste d'états
+#1:(5:active 0.1 1.0 0.0)/5->numéro d'état/active->déscription d'état/0.1 1.0 0.0->code couleurs RGB valeurs entre 0 et 1
+#0:(5:active)
 1:active
 2:inactive
-3:hey
-4:okay
+ 
