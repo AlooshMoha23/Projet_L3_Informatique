@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -51,10 +50,8 @@ int num_clients = 0;//compteur client
 int count_etat=0;
 Etat * etats=NULL;
 GtkWidget* drawing_area;  
-GtkWidget *zoom_in_button;
-GtkWidget *zoom_out_button;
 GtkWidget *state_list_box;
-double zoom_factor = 1.0; // Initial zoom factor
+
 //parametre du graphe
 double center_x = 500;
 double center_y = 500 ;
@@ -65,8 +62,25 @@ int MAX_CLIENTS=0;
 int closed_count=0;
 int count_start=0;
 int kam=0;
+int zoom_display=0;
 Text label;
 
+void on_submit(gpointer *data){
+    const char *dataa = gtk_entry_get_text(GTK_ENTRY(data));
+    if(strlen(dataa) == 0 || atoi(dataa)<=0){
+        zoom_display=0;
+        gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
+    }
+    else if( atoi(dataa)>num_clients){
+        zoom_display= 0;
+
+    }
+    else{
+        zoom_display=atoi(dataa);
+        gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
+        printf("submited %s: %d\n",dataa,zoom_display);
+    }
+}
 
 void update_status_list(int client_num, char* nom_etat,int row_index) {
      GtkListBox* list_box = GTK_LIST_BOX(state_list_box);
@@ -104,16 +118,6 @@ void update_status_list(int client_num, char* nom_etat,int row_index) {
     
     free(label_text);
 
-}
-
-void on_zoom_in_button_clicked(GtkWidget *widget, gpointer data) {
-  zoom_factor += 0.1; // Increase the zoom factor by 10%
-  gtk_widget_queue_draw(drawing_area); // Redraw the drawing area with the new zoom factor
-}
-
-void on_zoom_out_button_clicked(GtkWidget *widget, gpointer data) {
-  zoom_factor -= 0.1; 
-  gtk_widget_queue_draw(drawing_area); // Redraw the drawing area with the new zoom factor
 }
 
 //Botton pour basculer les affichage des adresses et indice de sites
@@ -207,9 +211,6 @@ void draw_text(GtkWidget *widget, cairo_t *cr, double x, double y, const char* t
 }
 //Fonction de dessin 
 static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
-     double zoom = zoom_factor;
-     // Scale the drawing area by the zoom factor
-     cairo_scale(cr, zoom, zoom);
     //text labels
     Text label1;
     label1.text="Suivi de l'éxécution";
@@ -220,33 +221,56 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
     label1.color.green=1.0;
     label1.color.alpha=1.0;
     draw_text(widget , cr,label1.x, label1.y, label1.text,&label1.color);
-    label.x=1100;
+    label.x=1069;
     label.y=880;
     draw_text(widget , cr,label.x, label.y, label.text,&label.color);
     
+    if(zoom_display==0){
     
-    
-    // Draw a line between each two circles
-    for (int i = 0; i < num_clients; i++) {
-        for (int j = 0; j < num_clients; j++)
-        {
-            if(circles[i].con_to[j]==1){
-                Circle* circle1 = &circles[j];
-                Circle* circle2 = &circles[i];
-                cairo_set_line_width(cr, 2);
-                cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.5);
-                cairo_move_to(cr, circle1->x, circle1->y);
-                cairo_line_to(cr, circle2->x, circle2->y);
-                cairo_stroke(cr);
+        // Draw a line between each two circles
+        for (int i = 0; i < num_clients; i++) {
+            for (int j = 0; j < num_clients; j++)
+            {
+                if(circles[i].con_to[j]==1){
+                    Circle* circle1 = &circles[j];
+                    Circle* circle2 = &circles[i];
+                    cairo_set_line_width(cr, 2);
+                    cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.5);
+                    cairo_move_to(cr, circle1->x, circle1->y);
+                    cairo_line_to(cr, circle2->x, circle2->y);
+                    cairo_stroke(cr);
 
+                }
             }
         }
+        // Iterate over all circles and draw each one
+        for (int i = 0; i < num_clients; i++) {
+            Circle* circle = &circles[i];
+            draw_circle(cr, circle->x, circle->y, circle->radius,circle->angle,&circle->color, circle->text,circle->nom_etat);
+        }
+    }else{
+        for (int i = 0; i < num_clients; i++) {
+            Circle* circle = &circles[i];
+
+            if (circle->indice == zoom_display) {
+
+                for (int j = 0; j < num_clients; j++) {
+                    if (circle->con_to[j] == 1) {
+                        Circle* connected_circle = &circles[j];
+                        cairo_set_line_width(cr, 2);
+                        cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.5);
+                        cairo_move_to(cr, connected_circle->x, connected_circle->y);
+                        cairo_line_to(cr, circle->x, circle->y);
+                        cairo_stroke(cr);
+                        draw_circle(cr, circle->x, circle->y, circle->radius,circle->angle,&circle->color, circle->text,circle->nom_etat);
+                        draw_circle(cr, connected_circle->x, connected_circle->y, connected_circle->radius,connected_circle->angle,&connected_circle->color, connected_circle->text,connected_circle->nom_etat);
+                    }
+                }
+            }
+
+        }
     }
-    // Iterate over all circles and draw each one
-    for (int i = 0; i < num_clients; i++) {
-        Circle* circle = &circles[i];
-        draw_circle(cr, circle->x, circle->y, circle->radius,circle->angle,&circle->color, circle->text,circle->nom_etat);
-    }
+    
     return FALSE;
 }
 
@@ -277,12 +301,22 @@ void* gui_thread(void* arg) {
     gtk_box_pack_start(GTK_BOX(hboxx), drawing_area, FALSE, FALSE, 0);
     g_signal_connect(drawing_area, "draw", G_CALLBACK(on_draw), &circles[0]);
 
+    GtkWidget *vboxx = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_pack_start(GTK_BOX(hboxx), vboxx, TRUE, FALSE, 0);
+
+
+    GtkWidget *state_list_label = gtk_label_new("Suivre de prés:");
+    gtk_widget_set_margin_top(state_list_label, 5);
+    gtk_widget_set_margin_bottom(state_list_label, 5);
+    gtk_box_pack_start(GTK_BOX(vboxx), state_list_label, FALSE, FALSE, 0);
+    
 
     // Create a scrolled window to hold the state list
     GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-    gtk_widget_set_size_request(scrolled_window, 250, 500);
-    gtk_box_pack_start(GTK_BOX(hboxx), scrolled_window, FALSE, FALSE, 0);
+    gtk_widget_set_size_request(scrolled_window, 250, 700);
+    gtk_box_pack_start(GTK_BOX(vboxx), scrolled_window, FALSE, FALSE, 0);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+   
     
     // Create a list box to hold the state items
     state_list_box = gtk_list_box_new();
@@ -304,20 +338,24 @@ void* gui_thread(void* arg) {
     gtk_box_pack_start(GTK_BOX(vbox), check_button, FALSE, FALSE, 0);
     g_signal_connect(check_button, "toggled", G_CALLBACK(on_check_button_toggled), &circles[0]);
 
+    GtkWidget *input_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), input_box, FALSE, FALSE, 0);
 
-    // Create the zoom in button and add it to the container
-    zoom_in_button = gtk_button_new_with_label("Zoom In");
-    gtk_box_pack_start(GTK_BOX(vbox), zoom_in_button, FALSE, FALSE, 0);
+    GtkWidget *input_label = gtk_label_new("Zoom sur un site: ");
+    gtk_box_pack_start(GTK_BOX(input_box), input_label, FALSE, FALSE, 0);
 
-    // Connect the "clicked" signal to the on_zoom_in_button_clicked callback function
-    g_signal_connect(zoom_in_button, "clicked", G_CALLBACK(on_zoom_in_button_clicked), NULL);
 
-    // Create the zoom out button and add it to the container
-    zoom_out_button = gtk_button_new_with_label("Zoom Out");
-    gtk_box_pack_start(GTK_BOX(vbox), zoom_out_button, FALSE, FALSE, 0);
 
-    // Connect the "clicked" signal to the on_zoom_out_button_clicked callback function
-    g_signal_connect(zoom_out_button, "clicked", G_CALLBACK(on_zoom_out_button_clicked), NULL);
+    GtkWidget *input_entry = gtk_entry_new();
+    gtk_box_pack_start(GTK_BOX(input_box), input_entry, FALSE, FALSE, 0);
+
+
+    GtkWidget *submit_button = gtk_button_new_with_label("Submit");
+    gtk_box_pack_start(GTK_BOX(input_box), submit_button, FALSE, FALSE, 0);
+
+   g_signal_connect_swapped(submit_button, "clicked", G_CALLBACK(on_submit), input_entry);
+
+
 
     gtk_widget_show_all(window);
     gtk_main();
