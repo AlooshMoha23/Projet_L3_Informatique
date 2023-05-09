@@ -264,6 +264,9 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
                         cairo_stroke(cr);
                         draw_circle(cr, circle->x, circle->y, circle->radius,circle->angle,&circle->color, circle->text,circle->nom_etat);
                         draw_circle(cr, connected_circle->x, connected_circle->y, connected_circle->radius,connected_circle->angle,&connected_circle->color, connected_circle->text,connected_circle->nom_etat);
+                    }else{
+                         draw_circle(cr, circle->x, circle->y, circle->radius,circle->angle,&circle->color, circle->text,circle->nom_etat);
+
                     }
                 }
             }
