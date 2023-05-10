@@ -11,8 +11,6 @@
 #include<string.h>
 #include <fcntl.h>
 #include <time.h>
-#define min(x,y) x<y?x:y;
-//LD_PRELOAD=/lib/x86_64-linux-gnu/libpthread.so.0 ./p 3000 etat.txt to compile for me 
 
 typedef struct {
     double x;
@@ -65,6 +63,7 @@ int kam=0;
 int zoom_display=0;
 Text label;
 
+//Fonction pour afficher un site depuis son numéro
 void on_submit(gpointer *data){
     const char *dataa = gtk_entry_get_text(GTK_ENTRY(data));
     if(strlen(dataa) == 0 || atoi(dataa)<=0){
@@ -82,25 +81,23 @@ void on_submit(gpointer *data){
     }
 }
 
+//Mise a jour de la liste défilante 
 void update_status_list(int client_num, char* nom_etat,int row_index) {
-     GtkListBox* list_box = GTK_LIST_BOX(state_list_box);
-
-     char* label_text = (char *)calloc(566, sizeof(char));
+    GtkListBox* list_box = GTK_LIST_BOX(state_list_box);
+    char* label_text = (char *)calloc(566, sizeof(char));
     if (label_text == NULL) {
         fprintf(stderr, "Error: Memory allocation for label_text failed.\n");
         return;
     }
 
-    // Create the label text
     time_t current_time = time(NULL);
     struct tm *tm_info = localtime(&current_time);
     char time_str[9]; 
     strftime(time_str, sizeof(time_str), "%T", tm_info); 
+
     sprintf(label_text, "%s     : Site %d (%s)", time_str, client_num, nom_etat);
     printf("LIST: %s\n", label_text);
-
     GtkWidget* label = gtk_label_new(label_text);
-
     GtkListBoxRow *row = gtk_list_box_get_row_at_index(list_box, row_index);
     if (row == NULL) {
         label = gtk_label_new(label_text);
@@ -111,13 +108,9 @@ void update_status_list(int client_num, char* nom_etat,int row_index) {
         gtk_label_set_text(GTK_LABEL(label), label_text);
         gtk_widget_show(label);
     }
-    //gtk_list_box_insert(GTK_LIST_BOX(list_box),label, -1);
     kam ++;
     printf("Row inserted %d.\n",kam);
-   // gtk_widget_show(label);
-    
     free(label_text);
-
 }
 
 //Botton pour basculer les affichage des adresses et indice de sites
@@ -145,7 +138,7 @@ static void draw_circle(cairo_t* cr, double x, double y, double radius,double an
     cairo_set_source_rgba(cr, color->red, color->green, color->blue, color->alpha);
     cairo_arc(cr, x, y, radius, 0, 2 * M_PI);
     cairo_fill(cr);
-    // Draw the border for circle
+
     cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.8);
     cairo_set_line_width(cr, 2.0);
     cairo_arc(cr, x, y, radius, 0, 2 * M_PI);
@@ -153,50 +146,46 @@ static void draw_circle(cairo_t* cr, double x, double y, double radius,double an
     
     cairo_set_font_size(cr, 7.5);
     cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.8);
-
-
-    if (angle >= M_PI_2 && angle <= 3*M_PI_2) {
-        // Left half of ring
+    if (angle >= M_PI_2 && angle <= 3*M_PI_2) {// Coté gauche du graphe
         cairo_text_extents_t extents;
         cairo_text_extents(cr,text, &extents);
         double x1=extents.width;
-        cairo_save(cr); // save current state of the context
-        cairo_translate(cr, x, y); // move origin to center of circle
-        cairo_rotate(cr, angle); // rotate coordinate system around origin by angle
-        cairo_scale(cr, -1, -1); // mirror text horizontally
-        cairo_move_to(cr, -radius-x1-10, 0); // move text cursor to edge of circle
-        cairo_show_text(cr, text); // show text
-        cairo_restore(cr); // restore previous state of the context
+        cairo_save(cr); 
+        cairo_translate(cr, x, y); 
+        cairo_rotate(cr, angle);
+        cairo_scale(cr, -1, -1); 
+        cairo_move_to(cr, -radius-x1-10, 0); 
+        cairo_show_text(cr, text);
+        cairo_restore(cr); 
 
         cairo_text_extents(cr,texti, &extents);
-        cairo_save(cr); // save current state of the context
+        cairo_save(cr); 
         cairo_set_source_rgba(cr, 1.0, 0.6, 0.0, 1.0);
-        cairo_translate(cr, x, y); // move origin to center of circle
-        cairo_rotate(cr, angle); // rotate coordinate system around origin by angle
-        cairo_scale(cr, -1, -1); // mirror text horizontally
-        cairo_move_to(cr, -radius-extents.width-x1-15, 0); // move text cursor to edge of circle
-        cairo_show_text(cr, texti); // show text
-        cairo_restore(cr); // restore previous state of the context
-    } else {
-        // Right half of ring
+        cairo_translate(cr, x, y); 
+        cairo_rotate(cr, angle);
+        cairo_scale(cr, -1, -1);
+        cairo_move_to(cr, -radius-extents.width-x1-15, 0); 
+        cairo_show_text(cr, texti);
+        cairo_restore(cr); 
+    } else { //coté droit
         cairo_text_extents_t extents;
         cairo_text_extents(cr,text, &extents);
         double x1=extents.width;
-        cairo_save(cr); // save current state of the context
-        cairo_translate(cr, x, y); // move origin to center of circle
-        cairo_rotate(cr, angle); // rotate coordinate system around origin by angle
-        cairo_move_to(cr, radius+10, 0); // move text cursor to edge of circle
-        cairo_show_text(cr, text); // show text
-        cairo_restore(cr); // restore previous state of the context
+        cairo_save(cr);
+        cairo_translate(cr, x, y); 
+        cairo_rotate(cr, angle);
+        cairo_move_to(cr, radius+10, 0);
+        cairo_show_text(cr, text);
+        cairo_restore(cr);
 
         cairo_text_extents(cr,texti, &extents);
-        cairo_save(cr); // save current state of the context
+        cairo_save(cr);
         cairo_set_source_rgba(cr, 1.0, 0.6, 0.0, 1.0);
-        cairo_translate(cr, x, y); // move origin to center of circle
-        cairo_rotate(cr, angle); // rotate coordinate system around origin by angle
-        cairo_move_to(cr, radius+x1+15, 0); // move text cursor to edge of circle
-        cairo_show_text(cr, texti); // show text
-        cairo_restore(cr); // restore previous state of the context
+        cairo_translate(cr, x, y);
+        cairo_rotate(cr, angle);
+        cairo_move_to(cr, radius+x1+15, 0);
+        cairo_show_text(cr, texti);
+        cairo_restore(cr); 
     }
 }
 //Fonction pour afficher du texte
@@ -264,7 +253,8 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
                         cairo_stroke(cr);
                         draw_circle(cr, circle->x, circle->y, circle->radius,circle->angle,&circle->color, circle->text,circle->nom_etat);
                         draw_circle(cr, connected_circle->x, connected_circle->y, connected_circle->radius,connected_circle->angle,&connected_circle->color, connected_circle->text,connected_circle->nom_etat);
-                    }else{
+                    }
+                    else{
                          draw_circle(cr, circle->x, circle->y, circle->radius,circle->angle,&circle->color, circle->text,circle->nom_etat);
 
                     }
@@ -297,8 +287,6 @@ void* gui_thread(void* arg) {
     hboxx = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(window), hboxx);
 
-
-
     drawing_area = gtk_drawing_area_new();
     gtk_widget_set_size_request(drawing_area, 1300, 900);
     gtk_box_pack_start(GTK_BOX(hboxx), drawing_area, FALSE, FALSE, 0);
@@ -307,58 +295,46 @@ void* gui_thread(void* arg) {
     GtkWidget *vboxx = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start(GTK_BOX(hboxx), vboxx, TRUE, FALSE, 0);
 
-
     GtkWidget *state_list_label = gtk_label_new("Suivre de prés:");
     gtk_widget_set_margin_top(state_list_label, 5);
     gtk_widget_set_margin_bottom(state_list_label, 5);
     gtk_box_pack_start(GTK_BOX(vboxx), state_list_label, FALSE, FALSE, 0);
-    
 
-    // Create a scrolled window to hold the state list
     GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-    gtk_widget_set_size_request(scrolled_window, 250, 700);
+    gtk_widget_set_size_request(scrolled_window, 250, 850);
     gtk_box_pack_start(GTK_BOX(vboxx), scrolled_window, FALSE, FALSE, 0);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
    
-    
-    // Create a list box to hold the state items
     state_list_box = gtk_list_box_new();
     gtk_container_add(GTK_CONTAINER(scrolled_window), state_list_box);
 
-            // Create the horizontal box container for the zoom buttons
-    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_pack_start(GTK_BOX(hboxx), vbox, TRUE, FALSE, 0);
-    
-    // Scroll to the bottom of the scrolled window
-    GtkAdjustment *adjustment = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(scrolled_window));
-    if (adjustment != NULL) {
-        double max_value = gtk_adjustment_get_upper(adjustment) - gtk_adjustment_get_page_size(adjustment);
-        gtk_adjustment_set_value(adjustment, max_value);
-    }
-
-
     GtkWidget *check_button = gtk_check_button_new_with_label("Afficher les adresse ips");
-    gtk_box_pack_start(GTK_BOX(vbox), check_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(vboxx), check_button, FALSE, FALSE, 0);
     g_signal_connect(check_button, "toggled", G_CALLBACK(on_check_button_toggled), &circles[0]);
 
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_pack_start(GTK_BOX(hboxx), vbox, FALSE, FALSE, 0);
+
     GtkWidget *input_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_margin_top(input_box, 30);
     gtk_box_pack_start(GTK_BOX(vbox), input_box, FALSE, FALSE, 0);
 
     GtkWidget *input_label = gtk_label_new("Zoom sur un site: ");
     gtk_box_pack_start(GTK_BOX(input_box), input_label, FALSE, FALSE, 0);
 
-
-
     GtkWidget *input_entry = gtk_entry_new();
     gtk_box_pack_start(GTK_BOX(input_box), input_entry, FALSE, FALSE, 0);
 
-
     GtkWidget *submit_button = gtk_button_new_with_label("Submit");
     gtk_box_pack_start(GTK_BOX(input_box), submit_button, FALSE, FALSE, 0);
+    g_signal_connect_swapped(submit_button, "clicked", G_CALLBACK(on_submit), input_entry);
 
-   g_signal_connect_swapped(submit_button, "clicked", G_CALLBACK(on_submit), input_entry);
-
-
+    GtkWidget *insts = gtk_label_new("-> Numéro du site : graphe du site et ses connexions");
+    gtk_widget_set_margin_top(insts, 10);
+    gtk_box_pack_start(GTK_BOX(vbox), insts, FALSE, FALSE, 0);
+    GtkWidget *instss = gtk_label_new("-> '_': Retour au graphe initial");
+    gtk_widget_set_margin_top(instss, 10);
+    gtk_box_pack_start(GTK_BOX(vbox), instss, FALSE, FALSE, 0);
 
     gtk_widget_show_all(window);
     gtk_main();
@@ -493,8 +469,6 @@ void* server_thread(void* arg) {
                                         label.color.green=0.0;
                                         label.color.alpha=1.0;}
                                         gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
-                                        
-                                        
                                         
                                     } else {
                                             if(n == sizeof(struct sockaddr_in)) {
