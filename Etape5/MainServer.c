@@ -49,35 +49,52 @@ int count_etat=0;
 Etat * etats=NULL;
 GtkWidget* drawing_area;  
 GtkWidget *state_list_box;
-
+GtkWidget *suivi;
+double zoom_factor = 1.0;
 //parametre du graphe
-double center_x = 500;
-double center_y = 500 ;
-double radius = 280 ;
+double center_x = 1200;
+double center_y = 1200 ;
+double radius =500;
 double angle_step=0;
 
 int MAX_CLIENTS=0;
 int closed_count=0;
 int count_start=0;
 int kam=0;
-int zoom_display=0;
+int focus_display=0;
 Text label;
+
+void update_suivi(int i){
+    char* label_text = (char *)calloc(566, sizeof(char));
+    if (label_text == NULL) {
+        fprintf(stderr, "Error: Memory allocation for label_text failed.\n");
+        return;
+    }
+    if(i==0){
+       label_text="Suivi de l'éxécution: Connexion";
+    }else if(i==1){
+        label_text="Suivi de l'éxécution: Exécution en cours";
+    }else{
+        label_text="Suivi de l'éxécution: Exécution terminée";
+    }
+    gtk_label_set_text(GTK_LABEL(suivi), label_text);
+}
 
 //Fonction pour afficher un site depuis son numéro
 void on_submit(gpointer *data){
     const char *dataa = gtk_entry_get_text(GTK_ENTRY(data));
     if(strlen(dataa) == 0 || atoi(dataa)<=0){
-        zoom_display=0;
+        focus_display=0;
         gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
     }
     else if( atoi(dataa)>num_clients){
-        zoom_display= 0;
+        focus_display= 0;
 
     }
     else{
-        zoom_display=atoi(dataa);
+        focus_display=atoi(dataa);
         gtk_widget_queue_draw(GTK_WIDGET(drawing_area));
-        printf("submited %s: %d\n",dataa,zoom_display);
+        printf("submited %s: %d\n",dataa,focus_display);
     }
 }
 
@@ -96,7 +113,6 @@ void update_status_list(int client_num, char* nom_etat,int row_index) {
     strftime(time_str, sizeof(time_str), "%T", tm_info); 
 
     sprintf(label_text, "%s     : Site %d (%s)", time_str, client_num, nom_etat);
-    printf("LIST: %s\n", label_text);
     GtkWidget* label = gtk_label_new(label_text);
     GtkListBoxRow *row = gtk_list_box_get_row_at_index(list_box, row_index);
     if (row == NULL) {
@@ -108,8 +124,6 @@ void update_status_list(int client_num, char* nom_etat,int row_index) {
         gtk_label_set_text(GTK_LABEL(label), label_text);
         gtk_widget_show(label);
     }
-    kam ++;
-    printf("Row inserted %d.\n",kam);
     free(label_text);
 }
 
@@ -144,7 +158,7 @@ static void draw_circle(cairo_t* cr, double x, double y, double radius,double an
     cairo_arc(cr, x, y, radius, 0, 2 * M_PI);
     cairo_stroke(cr);
     
-    cairo_set_font_size(cr, 7.5);
+    cairo_set_font_size(cr, 10);
     cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.8);
     if (angle >= M_PI_2 && angle <= 3*M_PI_2) {// Coté gauche du graphe
         cairo_text_extents_t extents;
@@ -200,21 +214,10 @@ void draw_text(GtkWidget *widget, cairo_t *cr, double x, double y, const char* t
 }
 //Fonction de dessin 
 static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
-    //text labels
-    Text label1;
-    label1.text="Suivi de l'éxécution";
-    label1.x=900;
-    label1.y=880;
-    label1.color.red=1.0;
-    label1.color.blue=1.0;
-    label1.color.green=1.0;
-    label1.color.alpha=1.0;
-    draw_text(widget , cr,label1.x, label1.y, label1.text,&label1.color);
-    label.x=1069;
-    label.y=880;
-    draw_text(widget , cr,label.x, label.y, label.text,&label.color);
-    
-    if(zoom_display==0){
+
+    double zoom = zoom_factor;
+    cairo_scale(cr, zoom, zoom);
+    if(focus_display==0){
     
         // Draw a line between each two circles
         for (int i = 0; i < num_clients; i++) {
@@ -241,7 +244,7 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
         for (int i = 0; i < num_clients; i++) {
             Circle* circle = &circles[i];
 
-            if (circle->indice == zoom_display) {
+            if (circle->indice == focus_display) {
 
                 for (int j = 0; j < num_clients; j++) {
                     if (circle->con_to[j] == 1) {
@@ -263,9 +266,28 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
 
         }
     }
-    
+      
     return FALSE;
 }
+void update_drawing_area_size() {
+    int new_width = (int)(2400 * zoom_factor);
+    int new_height = (int)(2400 * zoom_factor);
+    gtk_widget_set_size_request(drawing_area, new_width, new_height);
+}
+
+void on_zoom_in_button_clicked(GtkWidget *widget, gpointer data) {
+    zoom_factor += 0.1;
+    update_drawing_area_size();
+    gtk_widget_queue_draw(drawing_area);
+}
+
+void on_zoom_out_button_clicked(GtkWidget *widget, gpointer data) {
+    zoom_factor -= 0.1;
+    update_drawing_area_size();
+    gtk_widget_queue_draw(drawing_area);
+}
+
+
 
 
 
@@ -288,9 +310,17 @@ void* gui_thread(void* arg) {
     gtk_container_add(GTK_CONTAINER(window), hboxx);
 
     drawing_area = gtk_drawing_area_new();
-    gtk_widget_set_size_request(drawing_area, 1300, 900);
-    gtk_box_pack_start(GTK_BOX(hboxx), drawing_area, FALSE, FALSE, 0);
     g_signal_connect(drawing_area, "draw", G_CALLBACK(on_draw), &circles[0]);
+
+    GtkWidget *scrolled_window_drawing_area = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_set_size_request(scrolled_window_drawing_area, 1300, 1000);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window_drawing_area),GTK_POLICY_ALWAYS, GTK_POLICY_ALWAYS);
+    gtk_box_pack_start(GTK_BOX(hboxx), scrolled_window_drawing_area, FALSE, FALSE, 0);
+
+    drawing_area = gtk_drawing_area_new();
+    gtk_container_add(GTK_CONTAINER(scrolled_window_drawing_area), drawing_area);
+    g_signal_connect(drawing_area, "draw", G_CALLBACK(on_draw), &circles[0]);
+
 
     GtkWidget *vboxx = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start(GTK_BOX(hboxx), vboxx, TRUE, FALSE, 0);
@@ -314,6 +344,14 @@ void* gui_thread(void* arg) {
 
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start(GTK_BOX(hboxx), vbox, FALSE, FALSE, 0);
+        
+    GtkWidget *insts = gtk_label_new("-> Numéro de site:affichage site et ses connexions");
+    gtk_widget_set_margin_top(insts, 10);
+    gtk_box_pack_start(GTK_BOX(vbox), insts, FALSE, FALSE, 0);
+
+    GtkWidget *instss = gtk_label_new("-> '_': Retour au graphe initial");
+    gtk_widget_set_margin_top(instss, 10);
+    gtk_box_pack_start(GTK_BOX(vbox), instss, FALSE, FALSE, 0);
 
     GtkWidget *input_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_margin_top(input_box, 30);
@@ -329,17 +367,23 @@ void* gui_thread(void* arg) {
     gtk_box_pack_start(GTK_BOX(input_box), submit_button, FALSE, FALSE, 0);
     g_signal_connect_swapped(submit_button, "clicked", G_CALLBACK(on_submit), input_entry);
 
-    GtkWidget *insts = gtk_label_new("-> Numéro du site : graphe du site et ses connexions");
-    gtk_widget_set_margin_top(insts, 10);
-    gtk_box_pack_start(GTK_BOX(vbox), insts, FALSE, FALSE, 0);
-    GtkWidget *instss = gtk_label_new("-> '_': Retour au graphe initial");
-    gtk_widget_set_margin_top(instss, 10);
-    gtk_box_pack_start(GTK_BOX(vbox), instss, FALSE, FALSE, 0);
+    GtkWidget * zoom_in_button = gtk_button_new_with_label("Zoom In");
+    gtk_box_pack_start(GTK_BOX(vbox), zoom_in_button, FALSE, FALSE, 0);
+    g_signal_connect(zoom_in_button, "clicked", G_CALLBACK(on_zoom_in_button_clicked), NULL);
+    GtkWidget *zoom_out_button = gtk_button_new_with_label("Zoom Out");
+    gtk_box_pack_start(GTK_BOX(vbox), zoom_out_button, FALSE, FALSE, 0);
+    g_signal_connect(zoom_out_button, "clicked", G_CALLBACK(on_zoom_out_button_clicked), NULL);
 
+    suivi = gtk_label_new("Suivi d'éxécution: ");
+    gtk_widget_set_margin_top(suivi, 10);
+    gtk_box_pack_start(GTK_BOX(vbox), suivi, FALSE, FALSE, 0);
+
+    update_drawing_area_size();
     gtk_widget_show_all(window);
     gtk_main();
     return NULL;
 }
+
 //Thread serveur avec select
 void* server_thread(void* arg) {
     char **argv = arg;
@@ -371,7 +415,7 @@ void* server_thread(void* arg) {
         perror("listen");
         exit(EXIT_FAILURE);
     }
-    printf("Serveur en ecoute\n");
+    printf("Serveur en écoute\n");
     // Accepter les nouvelles conexion et dessiner les circles
     FD_ZERO(&readfds);
     FD_SET(server_fd, &readfds);
@@ -407,24 +451,23 @@ void* server_thread(void* arg) {
             if (num_clients < MAX_CLIENTS) {
                 // Create new circle and add to array
                     Circle new_circle;
+                    new_circle.radius=20;
                     new_circle.con_to=(int *) malloc(MAX_CLIENTS * sizeof(int));
                     for (int i = 0; i < MAX_CLIENTS; i++) {
                          new_circle.con_to[i] = -1;
                     }   
                    if(MAX_CLIENTS<50){
-                    new_circle.radius = 20;
+                    radius=400;
                     }
                     else if(MAX_CLIENTS<100){
-                         new_circle.radius = 15;
-                         radius=400;
+                         radius=700;
                     }
                     else if(MAX_CLIENTS<150){
-                         new_circle.radius = 10;
-                         radius=300;
+                         radius=800;
                     }
                     else if(MAX_CLIENTS<300){
-                        new_circle.radius=5;
-                        radius=400;
+                        new_circle.radius=15;
+                        radius=1000;
                     }
                     new_circle.color.alpha = 1;
                     new_circle.socket_fd=new_socket;
@@ -463,7 +506,7 @@ void* server_thread(void* arg) {
                                         circles[i].socket_fd = -1;
                                         closed_count++;
                                         if(closed_count==MAX_CLIENTS){
-                                        label.text="(Exécution terminée)";
+                                        update_suivi(5);
                                         label.color.red=1.0;
                                         label.color.blue=0.0;
                                         label.color.green=0.0;
@@ -499,9 +542,8 @@ void* server_thread(void* arg) {
                                                         circles[i].x = center_x + radius * cos(k * angle_step);
                                                         circles[i].y = center_y + radius * sin(k * angle_step);
                                                         circles[i].angle=k*angle_step;
-                                                        printf("Coordonnées x:%f y:%f\n",circles[i].x,circles[i].y);
                                                         count_start++;
-                                                        label.text="(Connexion)";
+                                                        update_suivi(0);
                                                         label.color.red=1.0;
                                                         label.color.blue=0.4;
                                                         label.color.green=0.0;
@@ -521,7 +563,7 @@ void* server_thread(void* arg) {
                                                                 circles[i].color=etats[j].color;
                                                                 circles[i].last_color=etats[j].color;
                                                                 circles[i].nom_etat=etats[j].descEtat;
-                                                                label.text="(Exécusion en cours)";
+                                                                update_suivi(1);
                                                                 label.color.red=0.0;
                                                                 label.color.blue=0.0;
                                                                 label.color.green=1.0;
@@ -618,7 +660,6 @@ int main(int argc, char *argv[]) {
                char des[50];
                Etat newEtat;
                sscanf(line, "%d:%s", &numE,des);
-               printf("Number: %d : %s\n", numE,des);
                strcpy(desc[count_etat],des);
                double r = (double)rand() / RAND_MAX;
                double red = (double)i / nbr_etats;
@@ -654,10 +695,7 @@ int main(int argc, char *argv[]) {
             newEtat.color.alpha=1;
             etats[count_etat++]=newEtat;
         } 
-    }
-    for(int i=0; i<count_etat; i++){
-        printf("%d %s %f %f %f\n", etats[i].numEtat,etats[i].descEtat, etats[i].color.red, etats[i].color.green, etats[i].color.blue);
-    }   
+    }  
     fclose(fp);
     // Create GUI thread
     if (pthread_create(&gui_tid, NULL, gui_thread, NULL)) {
