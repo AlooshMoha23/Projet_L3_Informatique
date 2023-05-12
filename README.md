@@ -5,10 +5,7 @@ Ici vous trouverez tous les exemples de test que nous avons développé, qui nou
 # Objectif du projet
 
 L’objectif est de créer une interface qui illustre l’évolution d’une application distribuée.  
-Cette interface doit non seulement permettre la visualisation des états des processus et  
-les connexions entre eux, mais aussi fournir une API pour les développeurs d’applications  
-distribuées. Cette API leur permettra d’envoyer les états de leur application à l’interface  
-et de visualiser l’évolution de l’application en temps réel.
+Cette interface doit non seulement permettre la visualisation des états des processus et les connexions entre eux, mais aussi fournir une API pour les développeurs d’applications distribuées. Cette API leur permettra d’envoyer les états de leur application à l’interface et de visualiser l’évolution de l’application en temps réel.
 
 # Composition du github
 
