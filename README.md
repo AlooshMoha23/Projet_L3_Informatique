@@ -12,11 +12,11 @@ et de visualiser l’évolution de l’application en temps réel.
 
 # Composition du github
 
- - Etape 1 : Simple site qui envoie une information ( 1 ou 0) à l'interface graphique à intervalles réguliers.
- - Etape 2 : Deux sites qui envoient une information ( 1 ou 0) à l'interface graphique à intervalles réguliers.
- - Etape 3 : Deux sites qui envoient une information ( 1 ou 0) à l'interface graphique à intervalles réguliers.
- - Etape 4 : Deux sites qui envoient une information ( 1 ou 0) à l'interface graphique à intervalles réguliers.
- - Etape 5 : Deux sites qui envoient une information ( 1 ou 0) à l'interface graphique à intervalles réguliers.
+ - Etape 1 : Simple site qui envoie une information ( 1 ou 0 ) à l'interface graphique à intervalles réguliers.
+ - Etape 2 : Deux sites qui envoient une information ( 1 ou 0 ) à l'interface graphique à intervalles réguliers.
+ - Etape 3 : 
+ - Etape 4 : 
+ - Etape 5 : 
 
 # Personnes impliquées
 
