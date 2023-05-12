@@ -14,9 +14,9 @@ et de visualiser l’évolution de l’application en temps réel.
 
  - Etape 1 : Simple site qui envoie une information ( 1 ou 0 ) à l'interface graphique à intervalles réguliers.
  - Etape 2 : Deux sites qui envoient une information ( 1 ou 0 ) à l'interface graphique à intervalles réguliers.
- - Etape 3 : 
- - Etape 4 : 
- - Etape 5 : 
+ - Etape 3 : Nous avons développé deux sites ayant deux états (actif et en attente), l'état “attente” été envoyé lorsque le site était en attente de recevoir un message de l'autre site et l'état “actif” été envoyé lorsque l'on reçoit le message. Chacun envoie son état au serveur principal qui l’affiche graphiquement.
+ - Etape 4 : Nous avons reproduit l'étapes précédente tout en ajoutant un graphe et des couleurs dans l'interface graphique.
+ - Etape 5 : Nous avons développé un programme qui se connecte au serveur principal, à l'orchestrateur et au site concerné, et aussi qui prend en compte les adresses reçues par l'orchestrateur.
 
 # Personnes impliquées
 
