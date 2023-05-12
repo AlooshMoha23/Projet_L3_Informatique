@@ -13,7 +13,7 @@ Cette interface doit non seulement permettre la visualisation des états des pro
  - Etape 2 : Deux sites qui envoient une information ( 1 ou 0 ) à l'interface graphique à intervalles réguliers.
  - Etape 3 : Nous avons développé deux sites ayant deux états (actif et en attente), l'état “attente” été envoyé lorsque le site était en attente de recevoir un message de l'autre site et l'état “actif” été envoyé lorsque l'on reçoit le message. Chacun envoie son état au serveur principal qui l’affiche graphiquement.
  - Etape 4 : Nous avons reproduit l'étapes précédente tout en ajoutant un graphe et des couleurs dans l'interface graphique.
- - Etape 5 : Nous avons développé un programme qui se connecte au serveur principal, à l'orchestrateur et au site concerné, et aussi qui prend en compte les adresses reçues par l'orchestrateur.
+ - Etape 5(Main) : Nous avons développé un programme qui se connecte au serveur principal, à l'orchestrateur et au site concerné, et aussi qui prend en compte les adresses reçues par l'orchestrateur.
 
 # Personnes impliquées
 
