@@ -55,14 +55,14 @@ void* gui_thread(void* arg) {
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Nodes");
-    gtk_window_set_default_size(GTK_WINDOW(window), 800, 900);
+    gtk_window_set_default_size(GTK_WINDOW(window), 500, 500);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(window), vbox);
 
     drawing_area = gtk_drawing_area_new();
-    gtk_widget_set_size_request(drawing_area, 700, 800);
+    gtk_widget_set_size_request(drawing_area, 300, 300);
     gtk_box_pack_start(GTK_BOX(vbox), drawing_area, FALSE, FALSE, 0);
     g_signal_connect(drawing_area, "draw", G_CALLBACK(on_draw), &circles[num_clients]);
     GtkWidget* separator = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);

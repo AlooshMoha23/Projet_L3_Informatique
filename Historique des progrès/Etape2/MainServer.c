@@ -24,11 +24,11 @@ typedef struct {
 
 Circle circles[MAX_CLIENTS];
 int num_clients = 0;
-pthread_mutex_t lock;
+
 GtkWidget* drawing_area;  
 
 
-gint width, height;
+int width, height;
 
     
    
@@ -177,8 +177,7 @@ void* server_thread(void* arg) {
                 continue;
             }
 
-            // Acquire lock to safely modify circles array
-            pthread_mutex_lock(&lock);
+           
             
 
             if (num_clients < MAX_CLIENTS) {
@@ -210,8 +209,7 @@ void* server_thread(void* arg) {
                 printf("Nombre de client dépassé\n");
             }
 
-            // Release lock
-           pthread_mutex_unlock(&lock);
+  
         }
 
         // Check if any of the client sockets have activity
@@ -219,7 +217,7 @@ void* server_thread(void* arg) {
             sd = circles[i].socket_fd;
             if (FD_ISSET(sd, &use)) {
                 
-                          pthread_mutex_lock(&lock);
+                    
                           int f;
                           
                             int rc = recv(sd, &f, sizeof(int), 0);
@@ -265,8 +263,7 @@ void* server_thread(void* arg) {
                                         }
                                             
                                     }
-                    // Release lock
-                    pthread_mutex_unlock(&lock);
+                 
 
                         
                     }
@@ -298,8 +295,7 @@ void* server_thread(void* arg) {
 int main() {
 pthread_t gui_tid, server_tid;
 
-// Initialize mutex
-pthread_mutex_init(&lock, NULL);
+
 
 // Create GUI thread
 if (pthread_create(&gui_tid, NULL, gui_thread, NULL)) {
@@ -317,8 +313,6 @@ if (pthread_create(&server_tid, NULL, server_thread, NULL)) {
 pthread_join(gui_tid, NULL);
 pthread_join(server_tid, NULL);
 
-// Destroy mutex
-pthread_mutex_destroy(&lock);
 
 return 0;
 }

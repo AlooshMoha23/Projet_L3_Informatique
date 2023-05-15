@@ -9,10 +9,9 @@ Cette interface doit non seulement permettre la visualisation des états des pro
 
 # Composition du github
 Hitorique des progrès :
- - Etape 1 : Simple site qui envoie une information ( 1 ou 0 ) à l'interface graphique à intervalles réguliers.
- - Etape 2 : Deux sites qui envoient une information ( 1 ou 0 ) à l'interface graphique à intervalles réguliers.
- - Etape 3 : Nous avons développé deux sites ayant deux états (actif et en attente), l'état “attente” été envoyé lorsque le site était en attente de recevoir un message de l'autre site et l'état “actif” été envoyé lorsque l'on reçoit le message. Chacun envoie son état au serveur principal qui l’affiche graphiquement.  
- - Etape 4 : Nous avons reproduit l'étapes précédente tout en ajoutant un graphe et des couleurs dans l'interface graphique.
+ - Etape 0 : Simple processus qui change d'état à intervalles réguliers affiché à l'interface graphique.
+ - Etape 1 : Site client connecté à l'interface graphique qui envoie son changement d'états représenté par un circle qui change de couleur.
+ - Etape 2 : Affichage de deux sites clients interconnectées sous forme de deux cirles liés qui changent de couleurs par changement d'états.  
 
 Main :
  - Notre interface graphique et l'API.

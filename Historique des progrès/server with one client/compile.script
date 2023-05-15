@@ -1,3 +1,0 @@
-#!/bin/bash
-
-gcc -Wno-format -o server server.c -lX11 -Wno-deprecated-declarations -Wno-format-security -lm `pkg-config --cflags --libs gtk+-3.0`  -rdynamic

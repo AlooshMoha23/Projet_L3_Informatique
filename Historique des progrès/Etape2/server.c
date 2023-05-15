@@ -96,12 +96,46 @@ printf("Client : conncetion to main server réussie \n");
 /*  send to main server              */
 /**************************************************************/
 
-int m=1;
+int etat;
+int n;
+int rcv;
+int snd;
 while(1){ 
 
-sleep(5);
 
-int snd=send(SocketMainServer, &m, sizeof(int), 0) ;
+
+/*from client*/
+rcv = recv(dSC, &n, sizeof(int), 0);
+if ( rcv == -1){
+    perror("Client : pb de recv de message :");
+    exit(1); 
+  }
+
+  if ( rcv == 0){
+    perror("Client : client is closed :");
+    exit(1); 
+  }
+  
+
+etat=1;
+sleep(2);
+
+
+/*to main server*/
+snd=send(SocketMainServer, &etat, sizeof(int), 0) ;
+if ( snd == -1){
+    perror("Client : pb d'envoi de message :");
+    exit(1); 
+  }
+
+  if ( snd == 0){
+    perror("Client : server is closed :");
+    exit(1); 
+  }
+
+  /*to client*/
+
+snd=send(dSC, &n, sizeof(int), 0) ;
 if ( snd == -1){
     perror("Client : pb d'envoi de message :");
     exit(1); 
@@ -113,15 +147,23 @@ if ( snd == -1){
   }
 
 
-  if(m==1){
+  etat=0;
+  sleep(2);
 
-    m=0;
-  }
-  else{
-    m=1;
+  /*to main server*/
+snd=send(SocketMainServer, &etat, sizeof(int), 0) ;
+if ( snd == -1){
+    perror("Client : pb d'envoi de message :");
+    exit(1); 
   }
 
- printf("Client : j'attend pendant 3s\n");
+  if ( snd == 0){
+    perror("Client : server is closed :");
+    exit(1); 
+  }
+
  
 }
+
+ printf("Client : j'attend pendant 3s\n");
 }

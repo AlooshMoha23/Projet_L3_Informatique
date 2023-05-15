@@ -1,3 +1,5 @@
 #!/bin/bash
 
 gcc -Wno-format -o MainServer MainServer.c -lX11 -Wno-deprecated-declarations -Wno-format-security -lm `pkg-config --cflags --libs gtk+-3.0`  -rdynamic
+gcc client.c -o client
+gcc server.c -o serveur

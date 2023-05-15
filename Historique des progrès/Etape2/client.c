@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
 
  
   if (argc != 5){
-    printf("utilisation : %s ip_serveur port_serveur \n", argv[0]);
+    printf("utilisation : %s ip_MAIN port_MAIN ip_serveur port_serveur \n", argv[0]);
     exit(1);
   }
 
@@ -72,11 +72,30 @@ int cnt2=connect(ds2, (struct sockaddr *)&ServerInfo , lgA) ;
 /**************************************************************/
 
 int m=0;
+int etat;
+int rcv;
+int snd;
 while(1){ 
 
-sleep(5);
 
-int snd=send(ds, &m, sizeof(int), 0) ;
+
+/*to process*/
+ snd=send(ds2, &m, sizeof(int), 0) ;
+if ( snd == -1){
+    perror("Client : pb d'envoi de message :");
+    exit(1); 
+  }
+
+  if ( snd == 0){
+    perror("Client : server is closed :");
+    exit(1); 
+  }
+
+  etat=0;
+  sleep(2);
+
+  /*to main server*/
+ snd=send(ds, &etat , sizeof(int), 0) ;
 
 if ( snd == -1){
     perror("Client : pb d'envoi de message :");
@@ -89,13 +108,39 @@ if ( snd == -1){
   }
 
 
-  if(m==1){
+  /*from process*/
+  rcv = recv(ds2, &m, sizeof(int), 0);
+if ( rcv == -1){
+    perror("Client : pb de recv de message :");
+    exit(1); 
+  }
 
-    m=0;
+  if ( rcv == 0){
+    perror("Client : client is closed :");
+    exit(1); 
   }
-  else{
-    m=1;
+
+
+  etat=1;
+  sleep(2);
+
+  /*to main server*/
+ snd=send(ds, &etat , sizeof(int), 0) ;
+
+if ( snd == -1){
+    perror("Client : pb d'envoi de message :");
+    exit(1); 
   }
+
+  if ( snd == 0){
+    perror("Client : server is closed :");
+    exit(1); 
+  }
+
+
+
+
+ 
 
  printf("Client : j'attend pendant 3s\n");
  
