@@ -52,8 +52,8 @@ GtkWidget *state_list_box;
 GtkWidget *suivi;
 double zoom_factor = 1.0;
 //parametre du graphe
-double center_x = 1200;
-double center_y = 1200 ;
+double center_x = 1750;
+double center_y = 1750 ;
 double radius =500;
 double angle_step=0;
 
@@ -270,8 +270,8 @@ static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
     return FALSE;
 }
 void update_drawing_area_size() {
-    int new_width = (int)(2400 * zoom_factor);
-    int new_height = (int)(2400 * zoom_factor);
+    int new_width = (int)(3500 * zoom_factor);
+    int new_height = (int)(3500 * zoom_factor);
     gtk_widget_set_size_request(drawing_area, new_width, new_height);
 }
 
@@ -457,17 +457,20 @@ void* server_thread(void* arg) {
                          new_circle.con_to[i] = -1;
                     }   
                    if(MAX_CLIENTS<50){
-                    radius=400;
+                    radius=600;
                     }
                     else if(MAX_CLIENTS<100){
-                         radius=700;
+                         radius=800;
                     }
                     else if(MAX_CLIENTS<150){
-                         radius=800;
+                         radius=1000;
                     }
                     else if(MAX_CLIENTS<300){
                         new_circle.radius=15;
-                        radius=1000;
+                        radius=1500;
+                    }else{
+                        new_circle.radius=10;
+                        radius=1600;
                     }
                     new_circle.color.alpha = 1;
                     new_circle.socket_fd=new_socket;
