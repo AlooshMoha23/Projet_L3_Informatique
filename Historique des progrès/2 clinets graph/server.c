@@ -18,7 +18,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include "fonctions.h"
-//https://www.tala-informatique.fr/wiki/index.php?title=C_pthread
+
 
 
 // to compile: bash compile.script
@@ -26,7 +26,7 @@
 GtkWidget *App;
 GtkWidget *drawing_area;
 
-GtkBuilder *builder;// pointer unsed in connection with loading the xml file (interface.glade)
+GtkBuilder *builder;
 
 
 
@@ -38,7 +38,7 @@ GtkBuilder *builder;// pointer unsed in connection with loading the xml file (in
 
 int main (int argc, char *argv[]){
 
-	 gtk_init(&argc, &argv); //for any gtk paramtres passed int the command ligne 
+	 gtk_init(&argc, &argv); 
     GTK(App, builder);
     drawingErea(App, drawing_area);
 
@@ -89,20 +89,12 @@ int main (int argc, char *argv[]){
  
 
   socklen_t lg = sizeof(struct sockaddr_in);
-
-   
-   /*------------------------- Create socket to receive incoming connections on--------------------------*/
-  
-  
    listen_sd = socket(PF_INET, SOCK_STREAM, 0);
    if (listen_sd < 0)
    {
       perror("socket() failed");
       exit(-1);
    }
-
-   
-   /*------------------------ Allow socket descriptor to be reuseable--------------------*/
 
    rc = setsockopt(listen_sd, SOL_SOCKET,  SO_REUSEADDR,(char *)&on, sizeof(on));
    if (rc < 0)
@@ -111,10 +103,6 @@ int main (int argc, char *argv[]){
       close(listen_sd);
       exit(-1);
    }
-
-  
-   /*--------------------Set socket to be nonblocking.---------------*/
-   
    rc = ioctl(listen_sd, FIONBIO, (char *)&on);
    if (rc < 0)
    {
@@ -123,17 +111,9 @@ int main (int argc, char *argv[]){
       exit(-1);
    }
 
-   /*************************************************************/
-   /* Bind the socket                                           */
-   /*************************************************************/
   ServerInfo.sin_family = AF_INET ;
   ServerInfo.sin_addr.s_addr =INADDR_ANY;
   ServerInfo.sin_port = htons((short) atoi(argv[1])) ; 
-
-
-
-
-
    rc = bind(listen_sd, (struct sockaddr*)&ServerInfo, sizeof(ServerInfo));
    if (rc < 0)
    {
@@ -141,10 +121,6 @@ int main (int argc, char *argv[]){
       close(listen_sd);
       exit(-1);
    }
-
-   
-   /*---------------Set the listen fonction--------------------*/
-   
    rc = listen(listen_sd, 32);
    if (rc < 0)
    {
@@ -152,78 +128,37 @@ int main (int argc, char *argv[]){
       close(listen_sd);
       exit(-1);
    }
-
-  
-   /*----------------Initialize the master fd_set---------------------*/
    
    FD_ZERO(&master_set);
    max_sd = listen_sd;
    FD_SET(listen_sd, &master_set);
 
-
-
-
-
-
-
-   
-   /* Loop waiting for incoming connects or for incoming data   */
-   /* on any of the connected sockets.                          */
-   
    do
    {
-     
-      /*------------------Copy the master fd_set over to the working fd_set.-------------*/
    
       memcpy(&working_set, &master_set, sizeof(master_set));
-
-      
-      /*-------------------------Call select()-----------------*/    
      
       printf("Waiting on select()...\n");
       rc = select(max_sd + 1, &working_set, NULL, NULL, NULL);
-
-      /**********************************************************/
-      /* Check to see if the select call failed.                */
-      /**********************************************************/
       if (rc < 0)
       {
          perror("  select() failed");
          break;
       }
 
-   
-
-      /**********************************************************/
-      /* One or more descriptors are readable.  Need to         */
-      /* determine which ones they are.                         */
-      /**********************************************************/
       desc_ready = rc;
       for (i=0; i <= max_sd  &&  desc_ready > 0; ++i)
 	  {
-         /*******************************************************/
-         /* Check to see if this descriptor is ready            */
-         /*******************************************************/
          if (FD_ISSET(i, &working_set))
          {
-            
-            /*-----------------A descriptor was found that was readable------------------*/
             desc_ready -= 1;
-
-           
-            /*------------Check to see if this is the listening socket-----------------*/
             
             if (i == listen_sd)
             {
                printf("  Listening socket is readable\n");
               
-               /*---------------- Accept connections--------------*/
-              
-               
                do
                {
-                
-                  
 
                   new_sd = accept(listen_sd, (struct sockaddr*) &ClientInfo,&lg);
                   if (new_sd < 0)
@@ -235,32 +170,19 @@ int main (int argc, char *argv[]){
                      }
                      break;
                   }
-                  /************creating a buffer to stock connected server for this client*************/
 
                   ClientStruct[i]=ClientInfo;
-                  
-                  /*--------------Add the new incoming connection to the master read set-------------*/
                   
                   printf("New incoming connection - %d\n", new_sd);
                   FD_SET(new_sd, &master_set);
                   if (new_sd > max_sd)
                      max_sd = new_sd;
-
-                  /*--------------Loop back up and accept another incoming connection-----------------*/
                   
                } while (new_sd != -1);
             }
-
-            /****************************************************/
-            /* This is not the listening socket, therefore an   */
-            /* existing connection must be readable             */
-            /****************************************************/
             else
             {
                close_conn = FALSE;
-
-                 /******************if receved is connected server struct**********************/
-                 /******************************************************************************/
 
                 if(strcmp(&msg, "NewConnection")){
 
@@ -295,11 +217,8 @@ int main (int argc, char *argv[]){
                      strcpy(msgC, "sorry dear client, this server is not connected to main server");
                      send(i,msgC, strlen(msgC)+1, 0);
                   }
-
                   
-
                  }
-
 
                  else if(strcmp(&msg, "disconnected")){ 
 
@@ -381,34 +300,18 @@ int main (int argc, char *argv[]){
                         max_sd -= 1;
                   }
                }
-            } /* End of existing connection is readable */
-         } /* End of if (FD_ISSET(i, &working_set)) */
-      } /* End of loop through selectable descriptors */
+            } 
+         }
+      }
 
    } while (end_server == FALSE);
 
-   /*************************************************************/
-   /* Clean up all of the sockets that are open                 */
-   /*************************************************************/
    for (i=0; i <= max_sd; ++i)
    {
       if (FD_ISSET(i, &master_set))
          close(i);
    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
  if(strcmp(&msg, "connected")){
@@ -441,7 +344,7 @@ int main (int argc, char *argv[]){
                   
                   }
                   else{
-                     strcpy(msgC, "sorry dear client, this server is not connected to main server");
+                     strcpy(msgC, "sorry, this server is not connected to main server");
                      send(i,msgC, strlen(msgC)+1, 0);
                   }
 
@@ -480,7 +383,7 @@ int main (int argc, char *argv[]){
                   
                   }
                   else{
-                     strcpy(msgC, "sorry dear client, this server is not connected to main server");
+                     strcpy(msgC, "sorry, this server is not connected to main server");
                      send(i,msgC, strlen(msgC)+1, 0);
                   }
 
@@ -510,9 +413,6 @@ int main (int argc, char *argv[]){
                   }
 
                   etat[i]=msg3;
-
-
-
 
                  }
 
