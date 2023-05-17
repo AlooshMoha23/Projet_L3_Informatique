@@ -8,7 +8,7 @@ L’objectif est de créer une interface qui illustre l’évolution d’une app
 Cette interface doit non seulement permettre la visualisation des états des processus et les connexions entre eux, mais aussi fournir une API pour les développeurs d’applications distribuées. Cette API leur permettra d’envoyer les états de leur application à l’interface et de visualiser l’évolution de l’application en temps réel.
 
 # Composition du github
-Hitorique des progrès :
+Historique des progrès :
  - Etape 0 : Simple processus qui change d'état à intervalles réguliers affiché à l'interface graphique.
  - Etape 1 : Site client connecté à l'interface graphique qui envoie son changement d'états représenté par un circle qui change de couleur.
  - Etape 2 : Affichage de deux sites clients interconnectées sous forme de deux cirles liés qui changent de couleurs par changement d'états.  
